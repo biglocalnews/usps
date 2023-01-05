@@ -1,0 +1,2 @@
+cd app/
+yarn pretty-quick --staged
