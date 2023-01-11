@@ -1,0 +1,96 @@
+version: "3.9"
+
+services:
+  # PostGIS controller node. Contains scripts and other tools for ingesting
+  # TIGER data.
+  ctl:
+    platform: linux/amd64
+    build:
+      context: ctl
+      labels:
+        - "edu.stanford.bln.addy.service=ctl"
+    image: ${CTL_IMAGE}:${CTL_VERSION}
+    restart: always
+    networks:
+      - private
+    volumes:
+      - gisdata:/gisdata
+    secrets:
+      - source: db_pass
+        target: /run/secrets/db_pass
+        mode: 0400
+      - source: db_user
+        target: /run/secrets/db_user
+        mode: 0400
+      - source: db_host
+        target: /run/secrets/db_host
+        mode: 0400
+      - source: db_name
+        target: /run/secrets/db_name
+    depends_on:
+      - db
+
+  # PostGIS database. This is only required in dev; the production database
+  # should be hosted outside of docker-compose.
+  db:
+    platform: linux/amd64
+    image: postgis/postgis:14-3.3
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB_FILE=/run/secrets/db_name
+      - POSTGRES_USER_FILE=/run/secrets/db_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_pass
+    secrets:
+      - db_name
+      - db_user
+      - db_pass
+    expose:
+      - 5432
+    networks:
+      - private
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d $$(cat /run/secrets/db_name | tr -d '\n')",
+        ]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+    deploy:
+      # NOTE: Postgres is not set up for replication in this compose file.
+      # You will have problems if you try to scale this db service. You should
+      # not use the docker-compose DB in production anyway.
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+
+volumes:
+  # Volume to contain postgres data.
+  # NOTE: This is an ephemeral volume. Do not use postgres in docker-compose in
+  # production.
+  pgdata:
+    driver_opts: {}
+  # Volume to contain TIGER data.
+  # This should be persistent in both dev & prod, since TIGER data can take
+  # a very long time to download.
+  gisdata:
+    type: bind
+    source: ./gisdata
+
+secrets:
+  # The following secrets are for development only. Override them in production
+  # to deploy real, secure secrets.
+  db_pass:
+    file: ./secrets/db_pass.dev
+  db_host:
+    file: ./secrets/db_host.dev
+  db_user:
+    file: ./secrets/db_user.dev
+  db_name:
+    file: ./secrets/db_name.dev
+
+networks:
+  private:
