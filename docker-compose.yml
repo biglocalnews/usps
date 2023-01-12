@@ -13,8 +13,13 @@ services:
     restart: always
     networks:
       - private
+    # Volume to contain TIGER data.
+    # This should be persistent in both dev & prod, since TIGER data can take
+    # a very long time to download.
     volumes:
-      - gisdata:/gisdata
+      - type: bind
+        source: ./gisdata
+        target: /gisdata
     secrets:
       - source: db_pass
         target: /run/secrets/db_pass
@@ -73,12 +78,6 @@ volumes:
   # production.
   pgdata:
     driver_opts: {}
-  # Volume to contain TIGER data.
-  # This should be persistent in both dev & prod, since TIGER data can take
-  # a very long time to download.
-  gisdata:
-    type: bind
-    source: ./gisdata
 
 secrets:
   # The following secrets are for development only. Override them in production
