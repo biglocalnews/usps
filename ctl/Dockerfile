@@ -17,8 +17,7 @@ RUN apt-get update \
 # Same is true of /addrdata, which contains OpenAddresses data.
 RUN mkdir -p /gisdata
 RUN mkdir -p /addrdata
-COPY ./scripts/init_tiger_data.sh .
-COPY ./scripts/post-ingest.sql .
-COPY ./scripts/create-search-view.sql .
+COPY ./scripts/*.sh .
+COPY ./scripts/*.sql .
 
 CMD ["tail", "-f", "/dev/null"]
