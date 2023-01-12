@@ -18,8 +18,11 @@ services:
     # a very long time to download.
     volumes:
       - type: bind
-        source: ./gisdata
+        source: ./data/gis
         target: /gisdata
+      - type: bind
+        source: ./data/addr
+        target: /addrdata
     secrets:
       - source: db_pass
         target: /run/secrets/db_pass
