@@ -1,4 +1,19 @@
 /**
+ * API url.
+ */
+const BASE_URL = 'http://localhost:8000';
+
+/**
+ * Get the full API URL for the given path.
+ *
+ * Optionally pass in URL parameters as well.
+ */
+const url = (path: string, search?: Record<string, any>) => {
+  const q = search ? `?${new URLSearchParams(search).toString()}` : '';
+  return `${BASE_URL}${path}${q}`;
+};
+
+/**
  * Types of shapes that might be used in the app.
  *
  * These are determined by the `/search` feature in the API.
@@ -50,8 +65,7 @@ export type ApiSearchResponse = Readonly<{
  * This function returns a copy of the input with the geometry attached.
  */
 export const fetchShape = async (d: ShapePointer): Promise<Shape> => {
-  const u = `http://localhost:8000/shape?kind=${d.kind}&gid=${d.gid}`;
-  const res = await fetch(u);
+  const res = await fetch(url('/shape', {kind: d.kind, gid: d.gid}));
   const data = (await res.json()) as ApiShapeResponse;
   // Parse the inner geometry, which in practice will always be a multipolygon.
   const geom = JSON.parse(data.geom) as GeoJSON.MultiPolygon;
@@ -65,8 +79,7 @@ export const fetchShape = async (d: ShapePointer): Promise<Shape> => {
  * `fetchShape` function for details.
  */
 export const search = async (needle: string): Promise<ShapePointer[]> => {
-  const u = `http://localhost:8000/search?q=${encodeURIComponent(needle)}`;
-  const res = await fetch(u);
+  const res = await fetch(url('/search', {q: needle}));
   const data = (await res.json()) as ApiSearchResponse;
   return data.results;
 };
