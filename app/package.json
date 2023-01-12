@@ -9,8 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
-    "prepare": "cd .. && husky install app/.husky"
+    "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
     "@popperjs/core": "^2.11.6",
@@ -34,6 +33,7 @@
     "vite": "^4.0.4"
   },
   "dependencies": {
+    "@types/geojson": "^7946.0.10",
     "lodash": "^4.17.21"
   }
 }
