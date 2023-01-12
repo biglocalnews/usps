@@ -16,5 +16,6 @@ RUN apt-get update \
 # doesn't have to be re-downloaded constantly. This can take quite a long time.
 RUN mkdir -p /gisdata
 COPY ./scripts/init_tiger_data.sh .
+COPY ./scripts/post-ingest.sql .
 
 CMD ["tail", "-f", "/dev/null"]
