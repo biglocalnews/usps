@@ -17,5 +17,6 @@ RUN apt-get update \
 RUN mkdir -p /gisdata
 COPY ./scripts/init_tiger_data.sh .
 COPY ./scripts/post-ingest.sql .
+COPY ./scripts/create-search-view.sql .
 
 CMD ["tail", "-f", "/dev/null"]
