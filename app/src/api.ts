@@ -83,3 +83,18 @@ export const search = async (needle: string): Promise<ShapePointer[]> => {
   const data = (await res.json()) as ApiSearchResponse;
   return data.results;
 };
+
+/**
+ * Draw a sample from the API.
+ */
+export const sample = async (bounds: GeoJSON.MultiPolygon, n: number) => {
+  const res = await fetch(url('/sample'), {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bounds, n}),
+    mode: 'cors',
+  });
+  const data = await res.json();
+  console.log(data);
+  return data;
+};

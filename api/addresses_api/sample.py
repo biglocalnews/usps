@@ -1,3 +1,5 @@
+import json
+
 from geojson import Feature, MultiPolygon, Point
 from pydantic import BaseModel, validator
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -10,7 +12,7 @@ class SampleRequest(BaseModel):
     This includes geographic constraints and statistical ones.
     """
 
-    bounds: list[MultiPolygon]
+    bounds: MultiPolygon
     n: int
 
     @validator("n")
@@ -52,24 +54,34 @@ async def draw_address_sample(
         Sample of address. This contains a list of addresses with their
         geocodes, as well as validation information.
     """
-    # TODO write query
+    # TODO optimize query
     stmt = text(
         """
-        SELECT tk
-        FROM tk
-        WHERE tk
+        SELECT
+            addr,
+            St_AsLatLonText(point, 'D.DDDDDDDDD') pt
+        FROM oa
+        WHERE St_Contains(St_GeomFromGeoJson(:bounds), St_Transform(oa.point, 4269))
+        ORDER BY random()
         LIMIT :n
     """
     )
 
-    res = await conn.execute(stmt, {"n": params.n})
+    res = await conn.execute(
+        stmt,
+        {
+            "n": params.n,
+            "bounds": json.dumps(params.bounds),
+        },
+    )
 
     sample = AddressSample(n=0, addresses=[], validation=[])
     for line in res:
         # TODO parse GeoJSON
-        point = Point(line[0])
-        addr = ...
-        sample.addresses.append(Feature(geometry=point, properties={"address": addr}))
+        addr, pointtxt = line
+        coords = [float(c) for c in pointtxt.split()]
+        ft = Feature(geometry=Point(coords), properties={"address": addr})
+        sample.addresses.append(ft)
 
     if len(sample.addresses) != params.n:
         sample.validation.append(

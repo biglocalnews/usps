@@ -7,6 +7,8 @@
   const fetchShape = async (e) => {
     const res = await api.fetchShape(e.detail);
     console.log(res);
+
+    console.log(await api.sample(res.geom, 20));
   };
 </script>
 

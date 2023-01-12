@@ -86,4 +86,4 @@ async def sample(params: SampleRequest, db: AsyncEngine = Deps.db):
         JSON with a random sample of addresses
     """
     async with db.connect() as conn:
-        return draw_address_sample(conn, params)
+        return await draw_address_sample(conn, params)
