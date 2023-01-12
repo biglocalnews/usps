@@ -13,6 +13,9 @@ fastapi = "^0.88.0"
 uvicorn = "^0.20.0"
 sqlalchemy = "^1.4.46"
 alembic = "^1.9.1"
+pydantic = {extras = ["dotenv"], version = "^1.10.4"}
+asyncpg = "^0.27.0"
+greenlet = "^2.0.1"
 
 
 [tool.poetry.group.dev]
