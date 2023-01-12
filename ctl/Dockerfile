@@ -14,7 +14,9 @@ RUN apt-get update \
 
 # NOTE: ideally /gisdata is mounted as a persistent volume, so that TIGER data
 # doesn't have to be re-downloaded constantly. This can take quite a long time.
+# Same is true of /addrdata, which contains OpenAddresses data.
 RUN mkdir -p /gisdata
+RUN mkdir -p /addrdata
 COPY ./scripts/init_tiger_data.sh .
 COPY ./scripts/post-ingest.sql .
 COPY ./scripts/create-search-view.sql .

@@ -1,5 +1,7 @@
 *.swp
 *.swo
 .DS_Store
-gisdata/*
-!gisdata/.gitkeep
+data/gis/*
+!data/gis/.gitkeep
+data/addr/*
+!data/addr/.gitkeep
