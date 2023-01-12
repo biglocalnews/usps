@@ -16,6 +16,7 @@ alembic = "^1.9.1"
 pydantic = {extras = ["dotenv"], version = "^1.10.4"}
 asyncpg = "^0.27.0"
 greenlet = "^2.0.1"
+geojson = "^2.5.0"
 
 
 [tool.poetry.group.dev]

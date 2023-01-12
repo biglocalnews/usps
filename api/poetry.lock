@@ -279,6 +279,18 @@ docs = ["furo (>=2022.12.7)", "sphinx (>=5.3)", "sphinx-autodoc-typehints (>=1.1
 testing = ["covdefaults (>=2.2.2)", "coverage (>=7.0.1)", "pytest (>=7.2)", "pytest-cov (>=4)", "pytest-timeout (>=2.1)"]
 
 [[package]]
+name = "geojson"
+version = "2.5.0"
+description = "Python bindings and utilities for GeoJSON"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "geojson-2.5.0-py2.py3-none-any.whl", hash = "sha256:ccbd13368dd728f4e4f13ffe6aaf725b6e802c692ba0dde628be475040c534ba"},
+    {file = "geojson-2.5.0.tar.gz", hash = "sha256:6e4bb7ace4226a45d9c8c8b1348b3fc43540658359f93c3f7e03efa9f15f658a"},
+]
+
+[[package]]
 name = "greenlet"
 version = "2.0.1"
 description = "Lightweight in-process concurrent programming"
@@ -883,4 +895,4 @@ testing = ["coverage (>=6.2)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "5d738901a38cbc5eea8c360e8f68c69adf8f348cac4c93bf7e0f2b7f51698ace"
+content-hash = "23203c64efbf1ff2d29c4b1d5b3b7caffe59268d45f52ae5e74941ffc512ab45"
