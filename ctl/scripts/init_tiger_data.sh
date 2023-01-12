@@ -94,3 +94,6 @@ chmod +x "$SCRIPT_DIR/state.sh"
 # Run vacuum as recommended in the instructions:
 # http://postgis.net/docs/postgis_installation.html#install_tiger_geocoder_extension
 cat post-ingest.sql | psql
+
+# Create the view that we can use to run search queries.
+cat create-search-view.sql | psql
