@@ -75,7 +75,7 @@ async def draw_address_sample(
         },
     )
 
-    sample = AddressSample(n=0, addresses=[], validation=[])
+    sample = AddressSample(n=params.n, addresses=[], validation=[])
     for line in res:
         # TODO parse GeoJSON
         addr, pointtxt = line
