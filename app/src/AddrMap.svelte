@@ -60,7 +60,7 @@
             source: 'addresses',
             paint: {
               'circle-color': '#f00',
-              'circle-radius': 5,
+              'circle-radius': 3,
             },
           });
       }

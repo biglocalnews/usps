@@ -53,8 +53,10 @@
   <AddrMap bounds={selectedShape} addresses={sample} />
   {#if selectedShape}
     <Navbar navClass="fixed w-full">
-      <NavBrand>Addy</NavBrand>
-      <NavUl>
+      <NavBrand>Addresses</NavBrand>
+      <NavUl
+        ulClass="flex flex-col p-2 mt-1 md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium items-center"
+      >
         <NavLi>
           <Badge large>
             {selectedShape.properties.name}
