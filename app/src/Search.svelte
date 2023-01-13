@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {createEventDispatcher} from 'svelte';
+  import {onMount, createEventDispatcher} from 'svelte';
   import {debounce} from 'lodash';
   import {Search} from 'flowbite-svelte';
   import AutoComplete from './AutoComplete.svelte';
@@ -93,13 +93,20 @@
     doSelect();
   };
 
+  // Hide autocomplete
   const hide = () => {
     visible = false;
   };
 
+  // Show autocomplete
   const show = () => {
     visible = true;
   };
+
+  // Set focus on the search input when the component mounts.
+  onMount(() => {
+    document.querySelector('input[type=search]').focus();
+  });
 </script>
 
 <div>
