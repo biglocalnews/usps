@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount, createEventDispatcher} from 'svelte';
   import {debounce} from 'lodash';
-  import {Search} from 'flowbite-svelte';
+  import {Search, Helper} from 'flowbite-svelte';
   import AutoComplete from './AutoComplete.svelte';
   import * as api from './api.ts';
 
@@ -117,10 +117,17 @@
     on:select={clickHandler}
   >
     <Search
+      name="geoinput"
       bind:value={query}
       on:keydown={keyHandler}
       on:blur={hide}
       on:focus={show}
+      placeholder="Where would you like to sample?"
     />
   </AutoComplete>
+  <Helper
+    class="text-s font-normal text-sky-600 dark:text-sky-300 pt-1 bg-white/50 rounded"
+    >You can search for cities, towns, counties, or states. Try: "Glover,
+    Vermont."</Helper
+  >
 </div>

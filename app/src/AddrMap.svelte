@@ -73,6 +73,9 @@
       if (map.getLayer('outline')) {
         map.removeLayer('outline');
       }
+      if (map.getLayer('shade')) {
+        map.removeLayer('shade');
+      }
       if (map.getSource('bounds')) {
         map.removeSource('bounds');
       }
@@ -90,6 +93,16 @@
             layout: {},
             paint: {
               'line-color': '#f00',
+            },
+          })
+          .addLayer({
+            id: 'shade',
+            type: 'fill',
+            source: 'bounds',
+            layout: {},
+            paint: {
+              'fill-color': '#00f',
+              'fill-opacity': 0.1,
             },
           })
           .fitBounds(extent(bounds));
