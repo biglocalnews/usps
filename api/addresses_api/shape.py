@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import text
 
 
-def _get_table(kind: str) -> str:
+def get_shape_table(kind: str) -> str:
+    """Get the table where a shape can be found."""
     tbl = kind.lower()
     if tbl not in {"state", "county", "cousub"}:
         raise ValueError(f"invalid kind {kind}")
@@ -14,7 +15,7 @@ async def fetch_shape(
     conn: AsyncConnection, kind: str, gid: int
 ) -> geojson.MultiPolygon:
     """Fetch a geometry from the database."""
-    tbl = _get_table(kind)
+    tbl = get_shape_table(kind)
 
     stmt = text(
         f"""

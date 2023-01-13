@@ -1,9 +1,24 @@
-import json
+from dataclasses import dataclass
+from typing import Optional, Tuple
 
-from geojson import Feature, MultiPolygon, Point
+from geojson import Feature, MultiPolygon, Point, dumps
 from pydantic import BaseModel, validator
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import text
+
+from .shape import get_shape_table
+
+
+@dataclass
+class ShapePlaceholder:
+    """Stand-in for a geometry stored in the database.
+
+    See `./shape.py` for more details.
+    """
+
+    name: Optional[str]
+    kind: str
+    gid: int
 
 
 class SampleRequest(BaseModel):
@@ -12,7 +27,12 @@ class SampleRequest(BaseModel):
     This includes geographic constraints and statistical ones.
     """
 
-    bounds: MultiPolygon
+    # Bounds can either be a GeoJSON MultiPolygon, or a reference to a geometry
+    # stored in the database. The latter is much faster, but the former allows
+    # flexibility (such as drawing a custom geometry in the UI, or uploading
+    # a geometry from another GeoJSON file).
+    custom_bounds: Optional[MultiPolygon]
+    shape_bounds: Optional[ShapePlaceholder]
     n: int
 
     @validator("n")
@@ -21,11 +41,13 @@ class SampleRequest(BaseModel):
             raise ValueError("n must be positive")
         return v
 
-    @validator("bounds")
-    def bounds_non_empty(cls, A):
-        if not A:
-            raise ValueError("sample must be bounded")
-        return A
+    @validator("custom_bounds", "shape_bounds")
+    def bounds_non_empty(cls, value, values, **kwargs):
+        if not bool(value) ^ bool(values["custom_bounds"]):
+            raise ValueError(
+                "must pass either custom_bounds or shape_bounds (not both)"
+            )
+        return value
 
 
 class AddressSample(BaseModel):
@@ -37,6 +59,23 @@ class AddressSample(BaseModel):
     n: int
     addresses: list[Feature]
     validation: list[str]
+
+
+def _get_bounds_subquery(params: SampleRequest) -> Tuple[str, dict]:
+    """Get the subquery to add a geographic constraint to the query.
+
+    Returns:
+        A tuple of the query text and bound parameters.
+    """
+    if params.shape_bounds:
+        tbl = get_shape_table(params.shape_bounds.kind)
+        return f"SELECT the_geom g FROM {tbl} WHERE gid = :gid", {
+            "gid": params.shape_bounds.gid
+        }
+    else:
+        return "SELECT St_GeomFromGeoJson(x) g FROM (values(:bounds)) s(x)", {
+            "bounds": dumps(params.custom_bounds)
+        }
 
 
 async def draw_address_sample(
@@ -54,25 +93,35 @@ async def draw_address_sample(
         Sample of address. This contains a list of addresses with their
         geocodes, as well as validation information.
     """
-    # TODO optimize query
+    # TODO optimize query even more. The random() order is fairly slow, there
+    # are some other strategies. Large custom geometries are also slow; for
+    # the most part queries should be run with geometries already in the DB.
+    bounds_q, args = _get_bounds_subquery(params)
     stmt = text(
-        """
-        SELECT
-            addr,
-            St_AsLatLonText(point, 'D.DDDDDDDDD') pt
-        FROM oa
-        WHERE St_Contains(St_GeomFromGeoJson(:bounds), St_Transform(oa.point, 4269))
+        f"""
+        WITH
+        bounds AS (
+            {bounds_q}
+        ),
+        bounded AS (
+            SELECT
+                oa.addr addr,
+                St_AsLatLonText(oa.point, 'D.DDDDDDDDD') p
+            FROM oa, bounds
+            WHERE St_Contains(bounds.g, oa.point)
+        )
+        SELECT addr, p
+        FROM bounded
         ORDER BY random()
         LIMIT :n
     """
     )
 
+    args["n"] = params.n
+
     res = await conn.execute(
         stmt,
-        {
-            "n": params.n,
-            "bounds": json.dumps(params.bounds),
-        },
+        args,
     )
 
     sample = AddressSample(n=params.n, addresses=[], validation=[])
