@@ -21,6 +21,11 @@ const url = (path: string, search?: Record<string, any>) => {
 export type ShapeKind = 'state' | 'county' | 'cousub';
 
 /**
+ * Unit of sample size. Can be either a total count or percentage.
+ */
+export type SampleSizeUnit = 'total' | 'pct';
+
+/**
  * Reference to a shape, without a geometry included.
  *
  * This type can be passed around cheaply and, when necessary, its underlying
@@ -101,6 +106,7 @@ export const search = async (needle: string): Promise<ShapePointer[]> => {
 export const sample = async (
   bounds: GeoJSON.MultiPolygon | ShapePointer,
   n: number,
+  unit: SampleSizeUnit,
 ): Promise<ApiSampleResponse> => {
   const [shapeBounds, customBounds] = bounds.hasOwnProperty('kind')
     ? [bounds, undefined]
@@ -112,6 +118,7 @@ export const sample = async (
       shape_bounds: shapeBounds,
       custom_bounds: customBounds,
       n,
+      unit,
     }),
     mode: 'cors',
   });

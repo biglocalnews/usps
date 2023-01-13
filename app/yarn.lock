@@ -769,6 +769,11 @@ flowbite@^1.5.5, flowbite@^1.6.0:
     "@popperjs/core" "^2.9.3"
     mini-svg-data-uri "^1.4.3"
 
+formatcoords@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/formatcoords/-/formatcoords-1.1.3.tgz#752f056ab2fe34c1d4ae8a19048ce0c38e16ed03"
+  integrity sha512-Ittg5/AsYFCOtcFGPLSmVpP56a8Ionmv4Ys69UmCAdvBnqVzvVVbkZMnjWEmXrZvnmoGQE8YI3RhnxbMQFdYSw==
+
 fraction.js@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/fraction.js/-/fraction.js-4.2.0.tgz#448e5109a313a3527f5a3ab2119ec4cf0e0e2950"

@@ -33,7 +33,7 @@
     <ul class="overflow-y-auto">
       {#each options as opt, i}
         <li
-          class="py-3 px-2"
+          class="py-3 px-2 cursor-pointer hover:bg-sky-400 hover:text-white"
           class:text-white={selected === i}
           class:bg-sky-500={selected === i}
           on:mousedown={(e) => handleClick(e, i)}
