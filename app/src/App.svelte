@@ -91,7 +91,7 @@
   {#if !selectedShape}
     <div class="container m-auto p-16 z-10">
       <header class="py-8">
-        <Heading>US Addresses Sampler</Heading>
+        <Heading>US Address Sampler</Heading>
       </header>
       <div>
         <Search on:select={fetchShape} />
