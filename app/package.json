@@ -33,7 +33,9 @@
     "vite": "^4.0.4"
   },
   "dependencies": {
+    "@mapbox/geojson-extent": "^1.0.1",
     "@types/geojson": "^7946.0.10",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "mapbox-gl": "^2.12.0"
   }
 }

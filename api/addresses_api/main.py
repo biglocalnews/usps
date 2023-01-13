@@ -46,9 +46,7 @@ async def shape(kind: str, gid: int, db: AsyncEngine = Deps.db):
         gid - ID of the geometry
 
     Returns:
-        Shape with geometry as a GeoJSON string. Note that this requires the
-        client to decode two levels of JSON -- the response itself, then the
-        GeoJSON inside the response.
+        GeoJSON Feature with shape geometry.
     """
     async with db.connect() as conn:
         return await fetch_shape(conn, kind, gid)
