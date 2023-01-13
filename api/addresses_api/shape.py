@@ -1,14 +1,6 @@
-from dataclasses import dataclass
-
+import geojson
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import text
-
-
-@dataclass
-class Shape:
-    kind: str
-    gid: int
-    geom: str
 
 
 def _get_table(kind: str) -> str:
@@ -18,7 +10,9 @@ def _get_table(kind: str) -> str:
     return f"tiger.{tbl}"
 
 
-async def fetch_shape(conn: AsyncConnection, kind: str, gid: int) -> Shape:
+async def fetch_shape(
+    conn: AsyncConnection, kind: str, gid: int
+) -> geojson.MultiPolygon:
     """Fetch a geometry from the database."""
     tbl = _get_table(kind)
 
@@ -33,5 +27,4 @@ async def fetch_shape(conn: AsyncConnection, kind: str, gid: int) -> Shape:
     result = await conn.execute(stmt, {"gid": gid})
 
     geom = result.fetchone()[0]
-
-    return Shape(kind=kind, gid=gid, geom=geom)
+    return geojson.loads(geom)

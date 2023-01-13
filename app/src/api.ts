@@ -33,24 +33,14 @@ export type ShapePointer = {
 };
 
 /**
- * Description of a shape with geometry included.
+ * Feature with shape geometry and identifying information.
  */
-export type Shape = ShapePointer & {
-  geom: GeoJSON.MultiPolygon;
-};
+export type Shape = GeoJSON.Feature<GeoJSON.MultiPolygon, ShapePointer>;
 
 /**
- * Geometry as returned by the server.
- *
- * This includes the pointer information (gid, kind) for book-keeping, but
- * does not include the human-readable name. The name can be supplied on the
- * client side as necessary -- see the `Shape` type and `fetchShape` function.
+ * Response returned from the API with the shape geometry.
  */
-export type ApiShapeResponse = Readonly<{
-  gid: number;
-  kind: ShapeKind;
-  geom: string;
-}>;
+export type ApiShapeResponse = Readonly<GeoJSON.MultiPolygon>;
 
 /**
  * List of search results returned by the server.
@@ -60,16 +50,37 @@ export type ApiSearchResponse = Readonly<{
 }>;
 
 /**
+ * GeoJSON feature representing an address at a lat/lon.
+ */
+export type Address = GeoJSON.Feature<
+  GeoJSON.Point,
+  {
+    address: string;
+  }
+>;
+
+/**
+ * API response for addresses sample.
+ */
+export type ApiSampleResponse = Readonly<{
+  n: number;
+  addresses: Address[];
+  validation: string[];
+}>;
+
+/**
  * Fetch a geometry from the server.
  *
- * This function returns a copy of the input with the geometry attached.
+ * Geometry is returned as GeoJSON feature.
  */
 export const fetchShape = async (d: ShapePointer): Promise<Shape> => {
   const res = await fetch(url('/shape', {kind: d.kind, gid: d.gid}));
-  const data = (await res.json()) as ApiShapeResponse;
-  // Parse the inner geometry, which in practice will always be a multipolygon.
-  const geom = JSON.parse(data.geom) as GeoJSON.MultiPolygon;
-  return {...d, geom};
+  const geom = (await res.json()) as ApiShapeResponse;
+  return {
+    type: 'Feature',
+    geometry: geom,
+    properties: d,
+  };
 };
 
 /**
@@ -87,14 +98,15 @@ export const search = async (needle: string): Promise<ShapePointer[]> => {
 /**
  * Draw a sample from the API.
  */
-export const sample = async (bounds: GeoJSON.MultiPolygon, n: number) => {
+export const sample = async (
+  bounds: GeoJSON.MultiPolygon,
+  n: number,
+): Promise<ApiSampleResponse> => {
   const res = await fetch(url('/sample'), {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({bounds, n}),
     mode: 'cors',
   });
-  const data = await res.json();
-  console.log(data);
-  return data;
+  return (await res.json()) as ApiSampleResponse;
 };

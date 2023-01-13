@@ -24,14 +24,21 @@
   };
 </script>
 
-<div>
+<div class="relative">
   <slot />
-  <div class="absolute" class:hidden={!visible}>
-    <ul>
+  <div
+    class="absolute shadow bg-white w-full rounded overflow-hidden"
+    class:hidden={!visible || !options.length}
+  >
+    <ul class="overflow-y-auto">
       {#each options as opt, i}
-        <li on:mousedown={(e) => handleClick(e, i)}>
+        <li
+          class="py-3 px-2"
+          class:text-white={selected === i}
+          class:bg-sky-500={selected === i}
+          on:mousedown={(e) => handleClick(e, i)}
+        >
           {opt.name}
-          {#if i == selected}*{/if}
         </li>
       {/each}
     </ul>

@@ -79,8 +79,8 @@ async def draw_address_sample(
     for line in res:
         # TODO parse GeoJSON
         addr, pointtxt = line
-        coords = [float(c) for c in pointtxt.split()]
-        ft = Feature(geometry=Point(coords), properties={"address": addr})
+        lat, lon = [float(c) for c in pointtxt.split()]
+        ft = Feature(geometry=Point([lon, lat]), properties={"address": addr})
         sample.addresses.append(ft)
 
     if len(sample.addresses) != params.n:
