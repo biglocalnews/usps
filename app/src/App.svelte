@@ -162,7 +162,10 @@
     </div>
   {/if}
   <SpeedDial class="z-10">
-    <a href={csvUrl || undefined} download={exportName || undefined}>
+    <a
+      href={csvUrl || undefined}
+      download={exportName ? `${exportName}.csv` : undefined}
+    >
       <SpeedDialButton name="Download CSV" disabled={!csvUrl}>
         CSV
       </SpeedDialButton>

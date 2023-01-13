@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from geojson import Feature, MultiPolygon, Point, dumps
 from pydantic import BaseModel, validator
@@ -34,7 +34,7 @@ class SampleRequest(BaseModel):
     custom_bounds: Optional[MultiPolygon]
     shape_bounds: Optional[ShapePlaceholder]
     unit: str
-    n: int
+    n: Union[int, float]
 
     @validator("unit")
     def unit_exists(cls, value):
@@ -49,6 +49,12 @@ class SampleRequest(BaseModel):
             raise ValueError("n must be positive")
         if values["unit"] == "pct" and v > 100:
             raise ValueError("can't sample more than 100%")
+        return v
+
+    @validator("n")
+    def n_whole_count(cls, v, values):
+        if values["unit"] == "total" and isinstance(v, float):
+            raise ValueError("n must be a whole number")
         return v
 
     @validator("shape_bounds")
