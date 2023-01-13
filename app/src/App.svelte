@@ -33,7 +33,7 @@
   const fetchSample = async (e) => {
     loading = true;
     sample = [];
-    const sampleRes = await api.sample(selectedShape.geometry, sampleSize);
+    const sampleRes = await api.sample(selectedShape.properties, sampleSize);
 
     sample = sampleRes.addresses;
     loading = false;

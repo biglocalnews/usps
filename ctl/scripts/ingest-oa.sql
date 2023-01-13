@@ -9,8 +9,10 @@ CREATE TABLE IF NOT EXISTS oa (
 CREATE INDEX IF NOT EXISTS oa_point_idx ON oa USING GIST(point);
 
 -- Ingest data from the staging table to the final table.
+-- Note that the point geometry is transformed and stored as SRID 4269 to
+-- match the TIGER data.
 INSERT INTO oa (hash, addr, point)
-SELECT oas.hash, pprint_addy(a), oas.wkb_geometry
+SELECT oas.hash, pprint_addy(a), St_Transform(oas.wkb_geometry, 4269)
 FROM oa_staging oas
 LEFT JOIN LATERAL
 pagc_normalize_address(
