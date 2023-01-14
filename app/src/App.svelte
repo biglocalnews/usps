@@ -38,9 +38,11 @@
   let exportName = '';
   let helpOpen = false;
   let error: Error | null = null;
+  let mapCoord: Address | null = null;
 
   // Load GeoJSON representing the selected item.
   const fetchShape = async (e) => {
+    mapCoord = null;
     sample = [];
     error = null;
     selectedShape = null;
@@ -56,6 +58,7 @@
   const fetchSample = async (e) => {
     loading = true;
     error = null;
+    mapCoord = null;
     sample = [];
     try {
       const sampleRes = await api.sample(
@@ -82,6 +85,7 @@
     if (loading) {
       return;
     }
+    mapCoord = null;
     sample = [];
     selectedShape = null;
   };
@@ -107,6 +111,10 @@
     unitMenuOpen = true;
   };
 
+  const setMapCoord = (e) => {
+    mapCoord = e.detail;
+  };
+
   $: {
     const canExport = sample.length > 0 && !!selectedShape;
     csvUrl = canExport ? exportTools.csv(sample) : '';
@@ -124,7 +132,7 @@
 </style>
 
 <main class="flex h-screen w-screen overflow-hidden">
-  <AddrMap bounds={selectedShape} addresses={sample} />
+  <AddrMap bounds={selectedShape} popupData={mapCoord} addresses={sample} />
   {#if selectedShape}
     <div class="w-full fixed shadow" transition:fly={{y: -200, duration: 200}}>
       <Navbar>
@@ -199,7 +207,7 @@
       class="absolute bottom-0 left-0 w-screen z-10 shadow"
       transition:fly={{y: 200, duration: 200}}
     >
-      <SampleTable rows={sample} />
+      <SampleTable on:hover={setMapCoord} rows={sample} />
     </div>
   {/if}
   <SpeedDial class="z-10">

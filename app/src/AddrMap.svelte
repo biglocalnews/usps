@@ -8,6 +8,7 @@
 
   export let bounds: Shape | null = null;
   export let addresses: Address[] = [];
+  export let popupData: Address | null = null;
 
   mapboxgl.accessToken = config.mapboxToken;
 
@@ -15,6 +16,7 @@
   let map: mapboxgl.Map | null = null;
   // Flag to indicate when mapbox map is ready.
   let ready = false;
+  let popup: mapboxgl.Popup | null = null;
 
   // Initial viewport parameters -- this centers most of the contiguous US.
   const initialZoom = {
@@ -35,6 +37,29 @@
     });
   });
 
+  // Manage popup
+  $: {
+    if (ready) {
+      if (!popupData) {
+        if (popup) {
+          popup.remove();
+          popup = null;
+        }
+      } else {
+        if (!popup) {
+          popup = new mapboxgl.Popup();
+          popup.addTo(map);
+          popup.on('close', () => {
+            popupData = null;
+          });
+        }
+        popup.setLngLat(popupData.geometry.coordinates);
+        popup.setHTML(`<div>${popupData.properties.address}</div>`);
+        map.flyTo({zoom: 13, center: popupData.geometry.coordinates});
+      }
+    }
+  }
+
   // Update the address sample layer when sample/map are updated.
   $: {
     if (ready) {
@@ -46,23 +71,28 @@
       }
 
       if (addresses.length) {
+        const collection = {
+          type: 'FeatureCollection',
+          features: addresses,
+        };
         map
           .addSource('addresses', {
             type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: addresses,
-            },
+            data: collection,
           })
           .addLayer({
             id: 'points',
             type: 'circle',
             source: 'addresses',
             paint: {
-              'circle-color': '#f00',
-              'circle-radius': 3,
+              'circle-color': '#4d7c0f', // lime-700
+              'circle-radius': 2,
             },
-          });
+          })
+          // Re-center map on bounds, not the address collection. The extent
+          // of the address collection is similar, but probably very slightly
+          // different, which would cause an unpleasant jitter.
+          .fitBounds(extent(bounds));
       }
     }
   }
@@ -92,7 +122,7 @@
             source: 'bounds',
             layout: {},
             paint: {
-              'line-color': '#f00',
+              'line-color': '#b91c1c', // red-700
             },
           })
           .addLayer({
@@ -101,7 +131,7 @@
             source: 'bounds',
             layout: {},
             paint: {
-              'fill-color': '#00f',
+              'fill-color': '#d9f99d', // lime-200
               'fill-opacity': 0.1,
             },
           })

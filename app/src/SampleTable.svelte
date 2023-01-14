@@ -1,5 +1,6 @@
 <script lang="ts">
   import {ChevronUp, ChevronDown} from 'svelte-heros-v2';
+  import {createEventDispatcher} from 'svelte';
   import {
     Table,
     TableHead,
@@ -14,6 +15,8 @@
   import type {Address, Shape} from './api.ts';
   import formatcoords from 'formatcoords';
 
+  const dispatch = createEventDispatcher();
+
   // Whether table is collapsed or shown.
   export let collapse = false;
 
@@ -23,6 +26,10 @@
   // Show/hide visibility of table.
   const toggle = () => {
     collapse = !collapse;
+  };
+
+  const hover = (row) => {
+    dispatch('hover', row);
   };
 </script>
 
@@ -39,14 +46,14 @@
           <ChevronDown size="16" /> <span>Hide Data</span>
         {/if}
       </div>
-      <Table>
+      <Table hoverable>
         <TableHead>
           <TableHeadCell>Address</TableHeadCell>
           <TableHeadCell>Coordinates</TableHeadCell>
         </TableHead>
         <TableBody>
           {#each rows as row}
-            <TableBodyRow>
+            <TableBodyRow on:click={() => hover(row)}>
               <TableBodyCell>{row.properties.address}</TableBodyCell>
               <TableBodyCell
                 >{formatcoords(
