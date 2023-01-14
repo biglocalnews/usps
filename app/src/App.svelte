@@ -19,6 +19,7 @@
     SpeedDial,
     SpeedDialButton,
   } from 'flowbite-svelte';
+  import {Sparkles, QuestionMarkCircle} from 'svelte-heros-v2';
   import Search from './Search.svelte';
   import AddrMap from './AddrMap.svelte';
   import SampleTable from './SampleTable.svelte';
@@ -170,7 +171,9 @@
             >
               Sample
               {#if loading}
-                <Spinner class="ml-3" size="4" />
+                <Spinner class="ml-2" size="4" />
+              {:else}
+                <Sparkles class="ml-2" size="16" />
               {/if}
             </Button>
           </NavLi>
@@ -192,7 +195,10 @@
     </div>
   {/if}
   {#if sample.length}
-    <div class="absolute bottom-0 left-0 w-screen z-10 shadow">
+    <div
+      class="absolute bottom-0 left-0 w-screen z-10 shadow"
+      transition:fly={{y: 200, duration: 200}}
+    >
       <SampleTable rows={sample} />
     </div>
   {/if}
@@ -205,8 +211,8 @@
         CSV
       </SpeedDialButton>
     </a>
-    <SpeedDialButton name="What is this?" on:click={() => (helpOpen = true)}>
-      Help
+    <SpeedDialButton name="About this tool" on:click={() => (helpOpen = true)}>
+      <QuestionMarkCircle />
     </SpeedDialButton>
   </SpeedDial>
   <Modal title="About" bind:open={helpOpen} autoClose>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {ChevronUp, ChevronDown} from 'svelte-heros-v2';
   import {
     Table,
     TableHead,
@@ -14,7 +15,7 @@
   import formatcoords from 'formatcoords';
 
   // Whether table is collapsed or shown.
-  export let collapse = true;
+  export let collapse = false;
 
   // Current sample.
   export let rows: Address[] = [];
@@ -30,7 +31,14 @@
     contentClass="bg-gray-50 rounded-lg dark:bg-gray-800"
     activeClasses="p-4 text-blue-600 bg-white rounded-t-lg dark:bg-gray-800 dark:text-blue-500"
   >
-    <TabItem open title="{collapse ? 'Show' : 'Hide'} Data" on:click={toggle}>
+    <TabItem open on:click={toggle}>
+      <div slot="title" class="flex items-center gap-2">
+        {#if collapse}
+          <ChevronUp size="16" /> <span>Show Data</span>
+        {:else}
+          <ChevronDown size="16" /> <span>Hide Data</span>
+        {/if}
+      </div>
       <Table>
         <TableHead>
           <TableHeadCell>Address</TableHeadCell>
