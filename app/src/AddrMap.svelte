@@ -2,9 +2,11 @@
   import 'mapbox-gl/dist/mapbox-gl.css';
   import mapboxgl from 'mapbox-gl';
   import extent from '@mapbox/geojson-extent';
-  import {onMount} from 'svelte';
+  import {onMount, createEventDispatcher} from 'svelte';
   import type {Shape, Address} from './api.ts';
   import * as config from './config.ts';
+
+  const dispatch = createEventDispatcher();
 
   export let bounds: Shape | null = null;
   export let addresses: Address[] = [];
@@ -32,8 +34,9 @@
       ...initialZoom,
     });
 
-    map.on('load', () => {
+    map.on('load', (e) => {
       ready = true;
+      dispatch('ready', e);
     });
   });
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {fly} from 'svelte/transition';
+  import {fly, fade} from 'svelte/transition';
   import {
     Heading,
     Dropdown,
@@ -28,6 +28,7 @@
   import * as exportTools from './export.ts';
   import type {Address, Shape, SampleSizeUnit} from './api.ts';
 
+  let ready = false;
   let sample: Address[] = [];
   let loading = false;
   let sampleSize = 20;
@@ -120,6 +121,11 @@
     csvUrl = canExport ? exportTools.csv(sample) : '';
     exportName = canExport ? exportTools.name(selectedShape, sample) : '';
   }
+
+  // Indicate that subcomponents are ready.
+  const setReady = () => {
+    ready = true;
+  };
 </script>
 
 <style lang="postcss">
@@ -129,104 +135,132 @@
   :global(#unitbtn) {
     flex-shrink: 0;
   }
+
+  main {
+    opacity: 0;
+  }
+  main.ready {
+    opacity: 1;
+  }
 </style>
 
-<main class="flex h-screen w-screen overflow-hidden">
-  <AddrMap bounds={selectedShape} popupData={mapCoord} addresses={sample} />
-  {#if selectedShape}
-    <div class="w-full fixed shadow" transition:fly={{y: -200, duration: 200}}>
-      <Navbar>
-        <NavBrand />
-        <NavUl
-          ulClass="flex flex-col p-2 mt-1 md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium items-center"
-        >
-          <NavLi>I would like</NavLi>
-          <NavLi>
-            <ButtonGroup class="w-full">
-              <Input type="number" size="sm" id="n" bind:value={sampleSize} />
-              <Button on:click={openUnitMenu} id="unitbtn"
-                >{labelForUnit(unit)}</Button
-              >
-              <Dropdown bind:open={unitMenuOpen}>
-                <DropdownItem on:click={() => setUnit('total')}>
-                  {labelForUnit('total')}
-                </DropdownItem>
-                <DropdownItem on:click={() => setUnit('pct')}>
-                  {labelForUnit('pct')}
-                </DropdownItem>
-              </Dropdown>
-            </ButtonGroup>
-          </NavLi>
-          <NavLi>addresses from</NavLi>
-          <NavLi>
-            <Badge id="bound" large>
-              {selectedShape.properties.name}
-              <CloseButton
-                size="sm"
-                class="ml-3 -mr-1.5"
+<div>
+  {#if !ready}
+    <div class="flex h-screen w-screen absolute left-0 top-0">
+      <div class="m-auto" transition:fade={{duration: 200}}><Spinner /></div>
+    </div>
+  {/if}
+  <main
+    class="flex h-screen w-screen overflow-hidden transition-[opacity]"
+    class:ready
+  >
+    <AddrMap
+      bounds={selectedShape}
+      popupData={mapCoord}
+      addresses={sample}
+      on:ready={setReady}
+    />
+    {#if selectedShape}
+      <div
+        class="w-full fixed shadow"
+        transition:fly={{y: -200, duration: 200}}
+      >
+        <Navbar>
+          <NavBrand />
+          <NavUl
+            ulClass="flex flex-col p-2 mt-1 md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium items-center"
+          >
+            <NavLi>I would like</NavLi>
+            <NavLi>
+              <ButtonGroup class="w-full">
+                <Input type="number" size="sm" id="n" bind:value={sampleSize} />
+                <Button on:click={openUnitMenu} id="unitbtn"
+                  >{labelForUnit(unit)}</Button
+                >
+                <Dropdown bind:open={unitMenuOpen}>
+                  <DropdownItem on:click={() => setUnit('total')}>
+                    {labelForUnit('total')}
+                  </DropdownItem>
+                  <DropdownItem on:click={() => setUnit('pct')}>
+                    {labelForUnit('pct')}
+                  </DropdownItem>
+                </Dropdown>
+              </ButtonGroup>
+            </NavLi>
+            <NavLi>addresses from</NavLi>
+            <NavLi>
+              <Badge id="bound" large>
+                {selectedShape.properties.name}
+                <CloseButton
+                  size="sm"
+                  class="ml-3 -mr-1.5"
+                  disabled={loading}
+                  on:click={clearSelection}
+                />
+              </Badge>
+            </NavLi>
+            <NavLi>
+              <Button
+                gradient
                 disabled={loading}
-                on:click={clearSelection}
-              />
-            </Badge>
-          </NavLi>
-          <NavLi>
-            <Button
-              gradient
-              disabled={loading}
-              size="sm"
-              color="purpleToPink"
-              on:click={fetchSample}
-            >
-              Sample
-              {#if loading}
-                <Spinner class="ml-2" size="4" />
-              {:else}
-                <Sparkles class="ml-2" size="16" />
-              {/if}
-            </Button>
-          </NavLi>
-        </NavUl>
-      </Navbar>
-    </div>
-  {/if}
-  {#if !selectedShape}
-    <div
-      class="container m-auto p-16 z-10"
-      transition:fly={{y: 200, duration: 200}}
-    >
-      <header class="py-8">
-        <Heading>US Address Sampler</Heading>
-      </header>
-      <div>
-        <Search on:select={fetchShape} />
+                size="sm"
+                color="purpleToPink"
+                on:click={fetchSample}
+              >
+                Sample
+                {#if loading}
+                  <Spinner class="ml-2" size="4" />
+                {:else}
+                  <Sparkles class="ml-2" size="16" />
+                {/if}
+              </Button>
+            </NavLi>
+          </NavUl>
+        </Navbar>
       </div>
-    </div>
-  {/if}
-  {#if sample.length}
-    <div
-      class="absolute bottom-0 left-0 w-screen z-10 shadow"
-      transition:fly={{y: 200, duration: 200}}
-    >
-      <SampleTable on:hover={setMapCoord} rows={sample} />
-    </div>
-  {/if}
-  <SpeedDial class="z-10">
-    <a
-      href={csvUrl || undefined}
-      download={exportName ? `${exportName}.csv` : undefined}
-    >
-      <SpeedDialButton name="Download CSV" disabled={!csvUrl}>
-        CSV
+    {/if}
+    {#if !selectedShape}
+      <div
+        class="container m-auto p-16 z-10"
+        transition:fly={{y: 200, duration: 200}}
+      >
+        <header class="py-8">
+          <Heading>US Address Sampler</Heading>
+        </header>
+        <div>
+          <Search on:select={fetchShape} />
+        </div>
+      </div>
+    {/if}
+    {#if sample.length}
+      <div
+        class="absolute bottom-0 left-0 w-screen z-10 shadow"
+        transition:fly={{y: 200, duration: 200}}
+      >
+        <SampleTable on:hover={setMapCoord} rows={sample} />
+      </div>
+    {/if}
+    <SpeedDial class="z-10">
+      <a
+        href={csvUrl || undefined}
+        download={exportName ? `${exportName}.csv` : undefined}
+      >
+        <SpeedDialButton name="Download CSV" disabled={!csvUrl}>
+          CSV
+        </SpeedDialButton>
+      </a>
+      <SpeedDialButton
+        name="About this tool"
+        on:click={() => (helpOpen = true)}
+      >
+        <QuestionMarkCircle />
       </SpeedDialButton>
-    </a>
-    <SpeedDialButton name="About this tool" on:click={() => (helpOpen = true)}>
-      <QuestionMarkCircle />
-    </SpeedDialButton>
-  </SpeedDial>
-  <Modal title="About" bind:open={helpOpen} autoClose>
-    <Help />
-  </Modal>
-  <Modal title="Error" bind:open={error} autoClose>
-    <p>An error occurred! {error.message}</p>
-  </Modal>
-</main>
+    </SpeedDial>
+    <Modal title="About" bind:open={helpOpen} autoClose>
+      <Help />
+    </Modal>
+    <Modal title="Error" bind:open={error} autoClose>
+      <p>An error occurred! {error.message}</p>
+    </Modal>
+  </main>
+</div>
