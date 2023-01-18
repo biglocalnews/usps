@@ -3,8 +3,8 @@
   import mapboxgl from 'mapbox-gl';
   import extent from '@mapbox/geojson-extent';
   import {onMount, createEventDispatcher} from 'svelte';
-  import type {Shape, Address} from './api.ts';
-  import * as config from './config.ts';
+  import type {Shape, Address} from '../lib/api.ts';
+  import * as config from '../lib/config.ts';
 
   const dispatch = createEventDispatcher();
 

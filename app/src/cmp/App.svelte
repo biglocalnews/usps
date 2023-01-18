@@ -24,9 +24,9 @@
   import AddrMap from './AddrMap.svelte';
   import SampleTable from './SampleTable.svelte';
   import Help from './Help.svelte';
-  import * as api from './api.ts';
-  import * as exportTools from './export.ts';
-  import type {Address, Shape, SampleSizeUnit} from './api.ts';
+  import * as api from '../lib/api.ts';
+  import * as exportTools from '../lib/export.ts';
+  import type {Address, Shape, SampleSizeUnit} from '../lib/api.ts';
 
   let ready = false;
   let sample: Address[] = [];
