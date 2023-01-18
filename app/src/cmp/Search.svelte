@@ -3,7 +3,7 @@
   import {debounce} from 'lodash';
   import {Search, Helper} from 'flowbite-svelte';
   import AutoComplete from './AutoComplete.svelte';
-  import * as api from './api.ts';
+  import * as api from '../lib/api.ts';
 
   /**
    * Minimum length for autocomplete search queries.

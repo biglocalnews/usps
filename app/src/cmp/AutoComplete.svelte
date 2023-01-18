@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type {ShapePointer} from './api.ts';
   import {createEventDispatcher} from 'svelte';
+  import type {ShapePointer} from '../lib/api.ts';
 
   /**
    * Array of options to show.

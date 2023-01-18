@@ -12,8 +12,8 @@
     Tabs,
     TabItem,
   } from 'flowbite-svelte';
-  import type {Address, Shape} from './api.ts';
   import formatcoords from 'formatcoords';
+  import type {Address, Shape} from '../lib/api.ts';
 
   const dispatch = createEventDispatcher();
 

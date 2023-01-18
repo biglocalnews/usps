@@ -1,7 +1,4 @@
-/**
- * API url.
- */
-const BASE_URL = 'http://localhost:8000';
+import {baseUrl} from './config';
 
 /**
  * Get the full API URL for the given path.
@@ -9,8 +6,13 @@ const BASE_URL = 'http://localhost:8000';
  * Optionally pass in URL parameters as well.
  */
 const url = (path: string, search?: Record<string, any>) => {
-  const q = search ? `?${new URLSearchParams(search).toString()}` : '';
-  return `${BASE_URL}${path}${q}`;
+  const u = new URL(path, baseUrl);
+  if (search) {
+    for (let k of Object.keys(search)) {
+      u.searchParams.set(k, search[k]);
+    }
+  }
+  return u.toString();
 };
 
 /**
