@@ -5,3 +5,5 @@ data/gis/*
 !data/gis/.gitkeep
 data/addr/*
 !data/addr/.gitkeep
+data/tiles/*
+!data/tiles/.gitkeep
