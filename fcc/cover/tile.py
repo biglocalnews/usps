@@ -1,7 +1,3 @@
-"""Partial port of @mapbox/tile-cover:
-
-https://github.com/mapbox/tile-cover/blob/master/index.js
-"""
 import math
 from typing import Optional, Tuple, Union
 
