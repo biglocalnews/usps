@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Generator, Iterable, Optional, Tuple
 
 import click
+import cover
 import geojson
 import mapbox_vector_tile
 import mercantile
@@ -152,7 +153,70 @@ def metadata_path(tile: mercantile.Tile, output_dir: str, **kwargs) -> str:
     return os.path.join(tile_dir(tile, output_dir, **kwargs), "metadata.json")
 
 
-async def scrape_tiles(tiles: Iterable[mercantile.Tile], output_dir: str):
+def hash_file(f: str, blocksize: int = 4096) -> str:
+    """Compute hash of file contents.
+
+    Args:
+        f - Path to file
+        blocksize - Blocks to read at a time from the file
+
+    Returns:
+        Hex digest of hash
+    """
+    sha = hashlib.sha256()
+    with open(f, "rb") as fh:
+        for block in iter(lambda: fh.read(blocksize), b""):
+            sha.update(block)
+    return sha.hexdigest()
+
+
+def needs_update(tile: mercantile.Tile, output_dir: str, strict: bool = False) -> bool:
+    """Test whether file should be downloaded again.
+
+    In `strict` mode, we open metadata and look for errors.
+
+    Args:
+        tile - Tile to check
+        output_dir - Directory containing tile data
+        strict - Whether to do a thorough check for data issues
+
+    Returns:
+        True if the file should be downloaded again.
+    """
+    c = fabric_csv_path(tile, output_dir)
+    if not os.path.exists(c):
+        return True
+
+    m = metadata_path(tile, output_dir)
+    if not os.path.exists(m):
+        return True
+
+    if strict:
+        with open(m, "r") as fh:
+            meta = json.load(fh)
+            if meta.get("err", None) or meta.get("code") != 200:
+                return True
+            if meta.get("sha256", "") != hash_file(c):
+                return True
+
+    return False
+
+
+def rm_existing(f: str):
+    """Remove file if it exists.
+
+    Args:
+        f - Path to file
+    """
+    try:
+        os.remove(f)
+    except OSError:
+        pass
+
+
+async def scrape_tiles(
+    tiles: Iterable[mercantile.Tile], output_dir: str, strict: bool = False
+):
     """Scrape a list of tiles into the given output directory.
 
     Directory is organized as `./{zoom}/{x}/{y}/fabric.csv`
@@ -162,21 +226,37 @@ async def scrape_tiles(tiles: Iterable[mercantile.Tile], output_dir: str):
     """
     all_tiles = list(tiles)
     all_n = len(all_tiles)
-    filtered_tiles = [
-        t for t in tiles if os.path.exists(fabric_csv_path(t, output_dir))
-    ]
+    filtered_tiles = list[mercantile.Tile]()
+
+    print("Checking previously downloaded files ...")
+    async for t in tqdm(all_tiles):
+        if needs_update(t, output_dir, strict=strict):
+            filtered_tiles.append(t)
+
     # Set progress bar appropriately, when resuming.
     start_at = all_n - len(filtered_tiles)
 
+    if not filtered_tiles:
+        print("Nothing to do!")
+        return
+
+    print(f"Found {start_at} existing tile(s).")
+    print(f"Now downloaing {len(filtered_tiles)} new tile(s) ...")
     # TODO: concurrency
     with tqdm(filtered_tiles, total=all_n, initial=start_at) as pbar:
         async for tile in pbar:
             tout = fabric_csv_path(tile, output_dir, create=True)
+            mout = metadata_path(tile, output_dir)
+
+            # Remove file if it exists already
+            rm_existing(tout)
+            rm_existing(mout)
 
             fc, status_code, err = fetch_fabric_tile(tile)
             if err:
                 print(f"{tile}\t{status_code}\t{err}", file=sys.stderr)
 
+            # Write CSV
             writer = None
             with open(tout, "w") as fh:
                 for line in parse_fabric(tile, fc):
@@ -186,12 +266,8 @@ async def scrape_tiles(tiles: Iterable[mercantile.Tile], output_dir: str):
                         writer.writeheader()
                     writer.writerow(line)
 
-            sha = hashlib.sha256()
-            with open(tout, "rb") as fh:
-                for block in iter(lambda: fh.read(4096), b""):
-                    sha.update(block)
-
-            with open(metadata_path(tile, output_dir), "w") as fh:
+            # Write metadata
+            with open(mout, "w") as fh:
                 json.dump(
                     {
                         "code": status_code,
@@ -200,47 +276,55 @@ async def scrape_tiles(tiles: Iterable[mercantile.Tile], output_dir: str):
                         "y": tile.y,
                         "z": tile.z,
                         "ts": datetime.now().isoformat(),
-                        "sha256": sha.hexdigest(),
+                        "sha256": hash_file(tout),
                     },
                     fh,
                     indent=2,
                 )
 
 
-def parse_input_coord(coord: str) -> mercantile.LngLat:
-    """Parse CLI input coord as `{lat},{lng}` and zoom.
+def get_tiles(geom: cover.Geom, zoom: int) -> list[mercantile.Tile]:
+    """Get a list of mercantile tiles.
 
     Args:
-        coord - string with a comma-delimited `{lat},{lng}`
+        geom - GeoJSON geometry
+        zoom - Zoom level
 
     Returns:
-        mercantile.LngLat object
+        List of mercantile.Tiles covering the geometry.
     """
-    coords = [float(c.strip()) for c in coord.split(",")]
-    return mercantile.LngLat(coords[1], coords[0])
+    return [mercantile.Tile(*t) for t in cover.tiles(geom, zoom)]
 
 
 @click.command()
-@click.option("--ul", type=str)
-@click.option("--lr", type=str)
-@click.option("--tile_dir", type=str)
-@click.option("--zoom", type=int, default=DEFAULT_ZOOM)
-def run(*, ul: str, lr: str, tile_dir: str, zoom: int):
-    """Scrabe Fabric address data in the given bounds.
+@click.option("--tile_dir", "-d", type=str)
+@click.option("--feature", "-f", type=str)
+@click.option("--zoom", "-z", type=int, default=DEFAULT_ZOOM)
+@click.option("--strict", "-s", is_flag=True, default=False)
+def run(*, tile_dir: str, feature: str, zoom: int, strict: bool):
+    """Scrabe Fabric address data bounded by the given GeoJSON feature.
 
     Args:
-        ul - Upper left coordinates as "{lat},{lng}"
-        lr - Lower right coordinates as "{lat},{lng}"
-        feature - GeoJSON feature file
         tile_dir - Directory where tiles should be stored
+        feature - GeoJSON feature file
         zoom - Zoom level. Probably just leave this as default (15).
+        strict - Whether to check downloads rigorously and redownload as needed
     """
-    ul_coord = parse_input_coord(ul)
-    lr_coord = parse_input_coord(lr)
-    all_tiles = mercantile.tiles(
-        ul_coord.lng, lr_coord.lat, lr_coord.lng, ul_coord.lat, zoom
-    )
-    asyncio.run(scrape_tiles(all_tiles, tile_dir))
+    with open(feature, "r") as fh:
+        ft = geojson.load(fh)
+
+    # Parse GeoJSON feature. Can be either a Feature or FeatureCollection.
+    all_tiles = list[mercantile.Tile]()
+    match type(ft):
+        case geojson.FeatureCollection:
+            for f in ft.features:
+                all_tiles += get_tiles(f.geometry, zoom)
+        case geojson.Feature:
+            all_tiles += get_tiles(ft.geometry, zoom)
+        case _:
+            raise NotImplementedError(f"Feature type not supported {type(ft)}")
+
+    asyncio.run(scrape_tiles(all_tiles, tile_dir, strict=strict))
 
 
 if __name__ == "__main__":
