@@ -56,22 +56,22 @@ def tiles(geom: Geom, zoom: int) -> list[Tile]:
     tile_hash = TileHash()
 
     match type(geom):
-        case geom.Point:
+        case geojson.Point:
             lng, lat = geom.coordinates
             tile_hash = cover_point(lng, lat, zoom)
-        case geom.MultiPoint:
+        case geojson.MultiPoint:
             for point in geom.coordinates:
                 phash = cover_point(point[0], point[1], zoom)
                 tile_hash |= phash
-        case geom.LineString:
+        case geojson.LineString:
             tile_hash, _ = line_cover(geom.coordinates, zoom)
-        case geom.MultiLineString:
+        case geojson.MultiLineString:
             for line in geom.coordinates:
                 lhash, _ = line_cover(line, zoom)
                 tile_hash |= lhash
-        case geom.Polygon:
+        case geojson.Polygon:
             tile_hash, tiles = polygon_cover(geom.coordinates, zoom)
-        case geom.MultiPolygon:
+        case geojson.MultiPolygon:
             for poly in geom.coordinates:
                 phash, ptiles = polygon_cover(poly, zoom)
                 tile_hash |= phash
