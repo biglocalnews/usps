@@ -7,3 +7,5 @@ data/addr/*
 !data/addr/.gitkeep
 data/tiles/*
 !data/tiles/.gitkeep
+__pycache__/
+*.pyc
