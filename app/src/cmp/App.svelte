@@ -166,7 +166,10 @@
         transition:fly={{y: -200, duration: 200}}
       >
         <Navbar>
-          <NavBrand />
+          <NavBrand
+            ><Heading tag="h1" customSize="text-xl">US Address Sampler</Heading
+            ></NavBrand
+          >
           <NavUl
             ulClass="flex flex-col p-2 mt-1 md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium items-center"
           >
