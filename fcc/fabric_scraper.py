@@ -1,16 +1,18 @@
+import asyncio
 import csv
 import hashlib
 import json
 import os
+import sys
 from datetime import datetime
-from typing import Generator, Iterable
+from typing import Generator, Iterable, Optional, Tuple
 
 import click
 import geojson
 import mapbox_vector_tile
 import mercantile
 import requests
-import tqdm
+from tqdm.asyncio import tqdm
 
 # Fabric doesn't have a coarser granularity available.
 DEFAULT_ZOOM = 15
@@ -84,11 +86,11 @@ def parse_fabric(
             point_y=ty,
             lng=lnglat.lng,
             lat=lnglat.lat,
-            **{k: v for k, v in feature.properties.items() if k not in filter_props}
+            **{k: v for k, v in feature.properties.items() if k not in filter_props},
         )
 
 
-def fetch_fabric_tile(tile: mercantile.Tile) -> dict:
+def fetch_fabric_tile(tile: mercantile.Tile) -> Tuple[dict, int, Optional[Exception]]:
     """Download Fabric data from the FCC website from the given tile.
 
     Args:
@@ -116,21 +118,41 @@ def fetch_fabric_tile(tile: mercantile.Tile) -> dict:
 
     url = URL_TPL.format(pid=PID, zoom=tile.z, x=tile.x, y=tile.y)
 
-    response = requests.get(url, headers=headers)
+    try:
+        response = requests.get(url, headers=headers)
+    except Exception as e:
+        return ({}, 0, e)
+
     try:
         decoded = mapbox_vector_tile.decode(response.content)
         data = decoded.get("fabriclocation", {})
         # TODO: may be able to skip the initial decode, or use geojson decoder
         # directly in the mapbox_vector_tile library
         fc = geojson.loads(json.dumps(data))
-        return fc
+        return (fc, response.status_code, None)
     except Exception as e:
-        print("Failed to fetch tile:", e)
-        print(response.status_code, response.content)
-        raise e
+        return ({}, response.status_code, e)
 
 
-def scrape_tiles(tiles: Iterable[mercantile.Tile], output_dir: str):
+def tile_dir(tile: mercantile.Tile, output_dir: str, create: bool = False) -> str:
+    """Get the filesystem directory where tile data should be stored."""
+    tdir = os.path.join(output_dir, str(tile.z), str(tile.x), str(tile.y))
+    if create:
+        os.makedirs(tdir, exist_ok=True)
+    return tdir
+
+
+def fabric_csv_path(tile: mercantile.Tile, output_dir: str, **kwargs) -> str:
+    """Get path to CSV for tile fabric data."""
+    return os.path.join(tile_dir(tile, output_dir, **kwargs), "fabric.csv")
+
+
+def metadata_path(tile: mercantile.Tile, output_dir: str, **kwargs) -> str:
+    """Get path to tile metadata."""
+    return os.path.join(tile_dir(tile, output_dir, **kwargs), "metadata.json")
+
+
+async def scrape_tiles(tiles: Iterable[mercantile.Tile], output_dir: str):
     """Scrape a list of tiles into the given output directory.
 
     Directory is organized as `./{zoom}/{x}/{y}/fabric.csv`
@@ -138,43 +160,51 @@ def scrape_tiles(tiles: Iterable[mercantile.Tile], output_dir: str):
     If a file exists already at that location, then we assume the tile is
     already downloaded and we skip it.
     """
-    for tile in tqdm.tqdm(list(tiles)):
-        tdir = os.path.join(output_dir, str(tile.z), str(tile.x), str(tile.y))
-        os.makedirs(tdir, exist_ok=True)
+    all_tiles = list(tiles)
+    all_n = len(all_tiles)
+    filtered_tiles = [
+        t for t in tiles if os.path.exists(fabric_csv_path(t, output_dir))
+    ]
+    # Set progress bar appropriately, when resuming.
+    start_at = all_n - len(filtered_tiles)
 
-        tout = os.path.join(tdir, "fabric.csv")
-        if os.path.exists(tout):
-            continue
+    # TODO: concurrency
+    with tqdm(filtered_tiles, total=all_n, initial=start_at) as pbar:
+        async for tile in pbar:
+            tout = fabric_csv_path(tile, output_dir, create=True)
 
-        # TODO handle errors
-        fc = fetch_fabric_tile(tile)
+            fc, status_code, err = fetch_fabric_tile(tile)
+            if err:
+                print(f"{tile}\t{status_code}\t{err}", file=sys.stderr)
 
-        writer = None
-        with open(tout, "w") as fh:
-            for line in parse_fabric(tile, fc):
-                # Lazily get CSV writer based on first row
-                if not writer:
-                    writer = csv.DictWriter(fh, line.keys())
-                    writer.writeheader()
-                writer.writerow(line)
+            writer = None
+            with open(tout, "w") as fh:
+                for line in parse_fabric(tile, fc):
+                    # Lazily get CSV writer based on first row
+                    if not writer:
+                        writer = csv.DictWriter(fh, line.keys())
+                        writer.writeheader()
+                    writer.writerow(line)
 
-        sha = hashlib.sha256()
-        with open(tout, "rb") as fh:
-            for block in iter(lambda: fh.read(4096), b""):
-                sha.update(block)
+            sha = hashlib.sha256()
+            with open(tout, "rb") as fh:
+                for block in iter(lambda: fh.read(4096), b""):
+                    sha.update(block)
 
-        with open(os.path.join(tdir, "metadata.json"), "w") as fh:
-            json.dump(
-                {
-                    "x": tile.x,
-                    "y": tile.y,
-                    "z": tile.z,
-                    "ts": datetime.now().isoformat(),
-                    "sha256": sha.hexdigest(),
-                },
-                fh,
-                indent=2,
-            )
+            with open(metadata_path(tile, output_dir), "w") as fh:
+                json.dump(
+                    {
+                        "code": status_code,
+                        "err": str(err) if err else None,
+                        "x": tile.x,
+                        "y": tile.y,
+                        "z": tile.z,
+                        "ts": datetime.now().isoformat(),
+                        "sha256": sha.hexdigest(),
+                    },
+                    fh,
+                    indent=2,
+                )
 
 
 def parse_input_coord(coord: str) -> mercantile.LngLat:
@@ -201,6 +231,7 @@ def run(*, ul: str, lr: str, tile_dir: str, zoom: int):
     Args:
         ul - Upper left coordinates as "{lat},{lng}"
         lr - Lower right coordinates as "{lat},{lng}"
+        feature - GeoJSON feature file
         tile_dir - Directory where tiles should be stored
         zoom - Zoom level. Probably just leave this as default (15).
     """
@@ -209,7 +240,7 @@ def run(*, ul: str, lr: str, tile_dir: str, zoom: int):
     all_tiles = mercantile.tiles(
         ul_coord.lng, lr_coord.lat, lr_coord.lng, ul_coord.lat, zoom
     )
-    scrape_tiles(all_tiles, tile_dir)
+    asyncio.run(scrape_tiles(all_tiles, tile_dir))
 
 
 if __name__ == "__main__":
