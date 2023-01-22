@@ -7,6 +7,13 @@ These come from a third-party vendor in a product called Fabric.
 Our scraper downloads the Mapbox tiles provided by Fabric, decodes them, and stores data in CSV files.
 The scraped data directory structure mimics the tile server's, with directories like `./{zoom}/{x}/{y}/`.
 
+## Data
+
+The FCC's address data come from a project called `Fabric` compiled by a company called CostQuest.
+The dataset purports to represent all addresses in the US which are candidates for broadband service.
+(This includes satellite services such as Starlink.)
+Detailed information about how they compiled the data are [here](https://www.costquest.com/wp-content/uploads/2022/11/BroadbandServiceableLocationFabricMethodsManualPublic11022022-2.pdf).
+
 ## Usage
 
 Here's an example that downloads all the addresses in San Francisco,
