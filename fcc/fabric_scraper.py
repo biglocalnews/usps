@@ -282,7 +282,7 @@ async def scrape_tiles(
     filtered_tiles = list[mercantile.Tile]()
 
     print("Checking previously downloaded files ...")
-    async for t in tqdm(all_tiles):
+    async for t in tqdm(all_tiles, unit="files", colour="green"):
         if needs_update(t, output_dir, strict=strict):
             filtered_tiles.append(t)
 
@@ -294,12 +294,14 @@ async def scrape_tiles(
         return
 
     print(f"Found {start_at} existing tile(s).")
-    print(f"Now downloaing {len(filtered_tiles)} new tile(s) ...")
+    print(f"Now downloading {len(filtered_tiles)} new tile(s) ...")
 
     # Download everything we need, using semaphore to throttle requests.
     sem = asyncio.Semaphore(concurrency)
     tasks = [scrape_tile(sem, t, output_dir, strict=strict) for t in filtered_tiles]
-    for f in tqdm.as_completed(tasks, total=all_n, initial=start_at):
+    for f in tqdm.as_completed(
+        tasks, total=all_n, initial=start_at, unit="tiles", colour="cyan"
+    ):
         await f
 
 
