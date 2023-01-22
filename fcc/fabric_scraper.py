@@ -10,9 +10,9 @@ from typing import Generator, Iterable, Optional, Tuple
 import click
 import cover
 import geojson
+import httpx
 import mapbox_vector_tile
 import mercantile
-import requests
 from tqdm.asyncio import tqdm
 
 # Fabric doesn't have a coarser granularity available.
@@ -91,7 +91,9 @@ def parse_fabric(
         )
 
 
-def fetch_fabric_tile(tile: mercantile.Tile) -> Tuple[dict, int, Optional[Exception]]:
+async def fetch_fabric_tile(
+    tile: mercantile.Tile,
+) -> Tuple[dict, int, Optional[Exception]]:
     """Download Fabric data from the FCC website from the given tile.
 
     Args:
@@ -120,7 +122,8 @@ def fetch_fabric_tile(tile: mercantile.Tile) -> Tuple[dict, int, Optional[Except
     url = URL_TPL.format(pid=PID, zoom=tile.z, x=tile.x, y=tile.y)
 
     try:
-        response = requests.get(url, headers=headers)
+        async with httpx.AsyncClient() as c:
+            response = await c.get(url, headers=headers)
     except Exception as e:
         return ({}, 0, e)
 
@@ -214,8 +217,58 @@ def rm_existing(f: str):
         pass
 
 
+async def scrape_tile(
+    sem: asyncio.Semaphore, tile: mercantile.Tile, output_dir: str, strict: bool = False
+):
+    await sem.acquire()
+    try:
+        tout = fabric_csv_path(tile, output_dir, create=True)
+        mout = metadata_path(tile, output_dir)
+
+        # Remove file if it exists already
+        rm_existing(tout)
+        rm_existing(mout)
+
+        fc, status_code, err = await fetch_fabric_tile(tile)
+        if err:
+            print(f"{tile}\t{status_code}\t{err}", file=sys.stderr)
+
+        # Write CSV
+        writer = None
+        with open(tout, "w") as fh:
+            for line in parse_fabric(tile, fc):
+                # Lazily get CSV writer based on first row
+                if not writer:
+                    writer = csv.DictWriter(fh, line.keys())
+                    writer.writeheader()
+                writer.writerow(line)
+
+        # Write metadata
+        with open(mout, "w") as fh:
+            json.dump(
+                {
+                    "code": status_code,
+                    "err": str(err) if err else None,
+                    "x": tile.x,
+                    "y": tile.y,
+                    "z": tile.z,
+                    "ts": datetime.now().isoformat(),
+                    "sha256": hash_file(tout),
+                },
+                fh,
+                indent=2,
+            )
+    except Exception as e:
+        print(f"Error trying to scrape tile {tile}: {e}", file=sys.stderr)
+    finally:
+        sem.release()
+
+
 async def scrape_tiles(
-    tiles: Iterable[mercantile.Tile], output_dir: str, strict: bool = False
+    tiles: Iterable[mercantile.Tile],
+    output_dir: str,
+    strict: bool = False,
+    concurrency: int = 1,
 ):
     """Scrape a list of tiles into the given output directory.
 
@@ -242,45 +295,12 @@ async def scrape_tiles(
 
     print(f"Found {start_at} existing tile(s).")
     print(f"Now downloaing {len(filtered_tiles)} new tile(s) ...")
-    # TODO: concurrency
-    with tqdm(filtered_tiles, total=all_n, initial=start_at) as pbar:
-        async for tile in pbar:
-            tout = fabric_csv_path(tile, output_dir, create=True)
-            mout = metadata_path(tile, output_dir)
 
-            # Remove file if it exists already
-            rm_existing(tout)
-            rm_existing(mout)
-
-            fc, status_code, err = fetch_fabric_tile(tile)
-            if err:
-                print(f"{tile}\t{status_code}\t{err}", file=sys.stderr)
-
-            # Write CSV
-            writer = None
-            with open(tout, "w") as fh:
-                for line in parse_fabric(tile, fc):
-                    # Lazily get CSV writer based on first row
-                    if not writer:
-                        writer = csv.DictWriter(fh, line.keys())
-                        writer.writeheader()
-                    writer.writerow(line)
-
-            # Write metadata
-            with open(mout, "w") as fh:
-                json.dump(
-                    {
-                        "code": status_code,
-                        "err": str(err) if err else None,
-                        "x": tile.x,
-                        "y": tile.y,
-                        "z": tile.z,
-                        "ts": datetime.now().isoformat(),
-                        "sha256": hash_file(tout),
-                    },
-                    fh,
-                    indent=2,
-                )
+    # Download everything we need, using semaphore to throttle requests.
+    sem = asyncio.Semaphore(concurrency)
+    tasks = [scrape_tile(sem, t, output_dir, strict=strict) for t in filtered_tiles]
+    for f in tqdm.as_completed(tasks, total=all_n, initial=start_at):
+        await f
 
 
 def get_tiles(geom: cover.Geom, zoom: int) -> list[mercantile.Tile]:
@@ -301,14 +321,16 @@ def get_tiles(geom: cover.Geom, zoom: int) -> list[mercantile.Tile]:
 @click.option("--feature", "-f", type=str)
 @click.option("--zoom", "-z", type=int, default=DEFAULT_ZOOM)
 @click.option("--strict", "-s", is_flag=True, default=False)
-def run(*, tile_dir: str, feature: str, zoom: int, strict: bool):
+@click.option("--concurrency", "-n", type=int, default=1)
+def run(*, tile_dir: str, feature: str, zoom: int, strict: bool, concurrency: int):
     """Scrabe Fabric address data bounded by the given GeoJSON feature.
 
     Args:
-        tile_dir - Directory where tiles should be stored
-        feature - GeoJSON feature file
+        tile_dir - Directory where tiles should be stored.
+        feature - GeoJSON feature file.
         zoom - Zoom level. Probably just leave this as default (15).
-        strict - Whether to check downloads rigorously and redownload as needed
+        strict - Whether to check files rigorously and redownload as needed.
+        concurrency - Number of requests to make concurrently.
     """
     with open(feature, "r") as fh:
         ft = geojson.load(fh)
@@ -324,7 +346,9 @@ def run(*, tile_dir: str, feature: str, zoom: int, strict: bool):
         case _:
             raise NotImplementedError(f"Feature type not supported {type(ft)}")
 
-    asyncio.run(scrape_tiles(all_tiles, tile_dir, strict=strict))
+    asyncio.run(
+        scrape_tiles(all_tiles, tile_dir, strict=strict, concurrency=concurrency)
+    )
 
 
 if __name__ == "__main__":

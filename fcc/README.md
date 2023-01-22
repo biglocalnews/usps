@@ -5,17 +5,30 @@ Scrape addresses used on the [FCC's Broadband Map](https://broadbandmap.fcc.gov/
 These come from a third-party vendor in a product called Fabric.
 
 Our scraper downloads the Mapbox tiles provided by Fabric, decodes them, and stores data in CSV files.
+The scraped data directory structure mimics the tile server's, with directories like `./{zoom}/{x}/{y}/`.
 
 ## Usage
 
-Here's an example that downloads all the addresses in San Francisco.
+Here's an example that downloads all the addresses in San Francisco,
+assuming we have a GeoJSON feature called `sf.geojson` that contains the bounds
+of the city:
 
 ```py
-poetry run python fabric_scraper.py --ul '37.819800770375664, -122.56455476579843' --lr '37.702835718277555, -122.34388077023986' --tile_dir ../data/tiles
+poetry run python fabric_scraper.py --feature sf.geojson --tile_dir ../data/tiles --strict
 ```
 
-If tiles have been downloaded already, they are not attempted again.
+We will generate the minimal set of tiles covering the given geometry and scrape them from the FCC website.
 
-## TODO
+If tiles have been downloaded already, they are not attempted again unless they appear incomplete (e.g., an error occurred during the download).
 
-- Pass in custom GeoJSON geometry to download addresses for.
+### Args
+
+- `--feature <path>` GeoJSON Feature or FeatureCollection
+- `--tile_dir <dir>` Directory that contains downloaded tiles, with metadata
+- `--strict` Flag to force strict checking of metadata associated with previously downloaded files. If this is not used, we will skip downloading any tile that seems to exist. If `--strict` is passed, we will verify that the download of that tile actually succeeded and that the content is correct. If the tile data is invalid, we will re-download it.
+- `--concurrency <n>` Number of concurrent download requests to make. This can speed up downloading, but the FCC website seems to temporary ban anyone making sustained requests over 20qps, so it's risky to do more than 2 or 3 concurrent requests.
+
+## Completeness
+
+It's a good idea to run the scraper multiple times for a given feature with `--strict` mode enabled, until it declares that every tile is downloaded.
+Otherwise you may have missing data, since some requests will inevitably fail when you're downloading tens of thousands of tiles.
