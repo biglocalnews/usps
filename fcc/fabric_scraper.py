@@ -13,6 +13,7 @@ import geojson
 import httpx
 import mapbox_vector_tile
 import mercantile
+from throttle import Throttle
 from tqdm.asyncio import tqdm
 
 # Fabric doesn't have a coarser granularity available.
@@ -218,9 +219,9 @@ def rm_existing(f: str):
 
 
 async def scrape_tile(
-    sem: asyncio.Semaphore, tile: mercantile.Tile, output_dir: str, strict: bool = False
+    throttle: Throttle, tile: mercantile.Tile, output_dir: str, strict: bool = False
 ):
-    await sem.acquire()
+    await throttle.acquire()
     try:
         tout = fabric_csv_path(tile, output_dir, create=True)
         mout = metadata_path(tile, output_dir)
@@ -261,7 +262,7 @@ async def scrape_tile(
     except Exception as e:
         print(f"Error trying to scrape tile {tile}: {e}", file=sys.stderr)
     finally:
-        sem.release()
+        throttle.release()
 
 
 async def scrape_tiles(
@@ -269,6 +270,7 @@ async def scrape_tiles(
     output_dir: str,
     strict: bool = False,
     concurrency: int = 1,
+    rate: float = 15,
 ):
     """Scrape a list of tiles into the given output directory.
 
@@ -297,8 +299,10 @@ async def scrape_tiles(
     print(f"Now downloading {len(filtered_tiles)} new tile(s) ...")
 
     # Download everything we need, using semaphore to throttle requests.
-    sem = asyncio.Semaphore(concurrency)
-    tasks = [scrape_tile(sem, t, output_dir, strict=strict) for t in filtered_tiles]
+    throttle = Throttle(rate, concurrency)
+    tasks = [
+        scrape_tile(throttle, t, output_dir, strict=strict) for t in filtered_tiles
+    ]
     for f in tqdm.as_completed(
         tasks, total=all_n, initial=start_at, unit="tiles", colour="cyan"
     ):
@@ -324,7 +328,16 @@ def get_tiles(geom: cover.Geom, zoom: int) -> list[mercantile.Tile]:
 @click.option("--zoom", "-z", type=int, default=DEFAULT_ZOOM)
 @click.option("--strict", "-s", is_flag=True, default=False)
 @click.option("--concurrency", "-n", type=int, default=1)
-def run(*, tile_dir: str, feature: str, zoom: int, strict: bool, concurrency: int):
+@click.option("--rate", "-r", type=float, default=15)
+def run(
+    *,
+    tile_dir: str,
+    feature: str,
+    zoom: int,
+    strict: bool,
+    concurrency: int,
+    rate: float,
+):
     """Scrabe Fabric address data bounded by the given GeoJSON feature.
 
     Args:
@@ -333,6 +346,7 @@ def run(*, tile_dir: str, feature: str, zoom: int, strict: bool, concurrency: in
         zoom - Zoom level. Probably just leave this as default (15).
         strict - Whether to check files rigorously and redownload as needed.
         concurrency - Number of requests to make concurrently.
+        rate - Limit on requests per second
     """
     with open(feature, "r") as fh:
         ft = geojson.load(fh)
@@ -341,15 +355,24 @@ def run(*, tile_dir: str, feature: str, zoom: int, strict: bool, concurrency: in
     all_tiles = list[mercantile.Tile]()
     match type(ft):
         case geojson.FeatureCollection:
+            print(f"Loading {len(ft.features)} geometries from FeatureCollection ...")
             for f in ft.features:
-                all_tiles += get_tiles(f.geometry, zoom)
+                try:
+                    all_tiles += get_tiles(f.geometry, zoom)
+                except Exception as e:
+                    print(f"Failed to load geometry for {f.properties['name']}")
+                    print(e)
+                    sys.exit(1)
         case geojson.Feature:
+            print("Loading geometry from feature ...")
             all_tiles += get_tiles(ft.geometry, zoom)
         case _:
             raise NotImplementedError(f"Feature type not supported {type(ft)}")
 
     asyncio.run(
-        scrape_tiles(all_tiles, tile_dir, strict=strict, concurrency=concurrency)
+        scrape_tiles(
+            all_tiles, tile_dir, strict=strict, concurrency=concurrency, rate=rate
+        )
     )
 
 

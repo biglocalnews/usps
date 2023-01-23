@@ -33,7 +33,8 @@ If tiles have been downloaded already, they are not attempted again unless they 
 - `--feature <path>` GeoJSON Feature or FeatureCollection
 - `--tile_dir <dir>` Directory that contains downloaded tiles, with metadata
 - `--strict` Flag to force strict checking of metadata associated with previously downloaded files. If this is not used, we will skip downloading any tile that seems to exist. If `--strict` is passed, we will verify that the download of that tile actually succeeded and that the content is correct. If the tile data is invalid, we will re-download it.
-- `--concurrency <n>` Number of concurrent download requests to make. This can speed up downloading, but the FCC website seems to temporary ban anyone making sustained requests over 20qps, so it's risky to do more than 2 or 3 concurrent requests.
+- `--rate <n>` Max number of queries per second to make. The FCC website seems to ban you if you query at a sustained rate of 20 QPS, so the default is set to 15.
+- `--concurrency <n>` Number of concurrent download requests to make. This can speed up downloading, but risks getting temporarily banned from the site.
 
 ## Completeness
 
