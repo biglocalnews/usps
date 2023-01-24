@@ -8,11 +8,11 @@ from datetime import datetime
 from typing import Generator, Iterable, Optional, Tuple
 
 import click
-import cover
 import geojson
 import httpx
 import mapbox_vector_tile
 import mercantile
+import tile_tools
 from throttle import Throttle
 from tqdm.asyncio import tqdm
 
@@ -30,33 +30,6 @@ Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:108.0) Gecko/20100101 Firefox/1
 COOKIE = """\
 dtCookie=v_4_srv_1_sn_E63FA4722A06A00116FFD1AAF4C816D7_perc_100000_ol_0_mul_1_app-3A4a4015bed1371d61_1\
 """
-
-
-def tilecoords2lnglat(
-    tile: mercantile.Tile, x: int, y: int, extent: int = 4096
-) -> mercantile.LngLat:
-    """Convert relative tile coordinates to lng/lat degrees.
-
-    See also:
-    https://github.com/tilezen/mapbox-vector-tile#coordinate-transformations-for-encoding
-
-    Args:
-        tile - mercantile Tile containing coordinates
-        x - horizontal integer pixel offset within tile
-        y - vertical integer pixel offset within tile
-        extent - pixel space represented by tile (usually 4096)
-
-    Returns:
-        mercantile.LngLat object containing degree coordinates
-    """
-    # Get web mercator bounds of tile
-    bounds = mercantile.xy_bounds(tile)
-    # Convert pixel offsets to web mercator coordinates
-    # The lower left of the tile is (0, 0) and the upper right is (4096, 4096).
-    mx = bounds.left + x / float(extent) * (bounds.right - bounds.left)
-    my = bounds.bottom + y / float(extent) * (bounds.top - bounds.bottom)
-    # Convert spherical mercator to lng/lat.
-    return mercantile.lnglat(mx, my)
 
 
 def parse_fabric(
@@ -78,7 +51,7 @@ def parse_fabric(
         return
     for feature in fc.features:
         tx, ty = feature.geometry.coordinates
-        lnglat = tilecoords2lnglat(tile, tx, ty, extent=fc.extent)
+        lnglat = tile_tools.tilecoords2lnglat(tile, tx, ty, extent=fc.extent)
         yield dict(
             id=feature["id"],
             tile_x=tile.x,
@@ -309,7 +282,7 @@ async def scrape_tiles(
         await f
 
 
-def get_tiles(geom: cover.Geom, zoom: int) -> list[mercantile.Tile]:
+def get_tiles(geom: tile_tools.cover.Geom, zoom: int) -> list[mercantile.Tile]:
     """Get a list of mercantile tiles.
 
     Args:
@@ -319,7 +292,7 @@ def get_tiles(geom: cover.Geom, zoom: int) -> list[mercantile.Tile]:
     Returns:
         List of mercantile.Tiles covering the geometry.
     """
-    return [mercantile.Tile(*t) for t in cover.tiles(geom, zoom)]
+    return [mercantile.Tile(*t) for t in tile_tools.cover.tiles(geom, zoom)]
 
 
 @click.command()
@@ -327,7 +300,7 @@ def get_tiles(geom: cover.Geom, zoom: int) -> list[mercantile.Tile]:
 @click.option("--feature", "-f", type=str)
 @click.option("--zoom", "-z", type=int, default=DEFAULT_ZOOM)
 @click.option("--strict", "-s", is_flag=True, default=False)
-@click.option("--concurrency", "-n", type=int, default=1)
+@click.option("--concurrency", "-n", type=int, default=2)
 @click.option("--rate", "-r", type=float, default=15)
 def run(
     *,

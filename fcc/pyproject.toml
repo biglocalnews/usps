@@ -13,6 +13,7 @@ mercantile = "^1.2.1"
 geojson = "^2.5.0"
 tqdm = "^4.64.1"
 httpx = "^0.23.3"
+tile-tools = {path = "../../tile-tools"}
 
 
 [build-system]

@@ -377,6 +377,24 @@ files = [
 ]
 
 [[package]]
+name = "tile-tools"
+version = "0.1.0"
+description = "A collection of tools for navigating Mapbox tiles."
+category = "main"
+optional = false
+python-versions = "^3.10"
+files = []
+develop = false
+
+[package.dependencies]
+geojson = "^2.5.0"
+mercantile = "^1.2.1"
+
+[package.source]
+type = "directory"
+url = "../../tile-tools"
+
+[[package]]
 name = "tqdm"
 version = "4.64.1"
 description = "Fast, Extensible Progress Meter"
@@ -400,4 +418,4 @@ telegram = ["requests"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "0bdc127f4b8c4fab1b70dd791574feb2accaf933e942e6abbb0ffcbe1d5cd382"
+content-hash = "2baccd5568b368ea38e54d63181d450cea9d4d202b4de87db245f13d39c5b613"
