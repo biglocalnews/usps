@@ -31,6 +31,9 @@ COOKIE = """\
 dtCookie=v_4_srv_1_sn_E63FA4722A06A00116FFD1AAF4C816D7_perc_100000_ol_0_mul_1_app-3A4a4015bed1371d61_1\
 """
 
+# Timeout for >30 minutes if the server bans us for exceeding rate limits.
+AUTO_BAN_TIMEOUT = 32 * 60  # seconds
+
 
 def parse_fabric(
     tile: mercantile.Tile, fc: geojson.FeatureCollection
@@ -207,6 +210,15 @@ async def scrape_tile(
         if err:
             print(f"{tile}\t{status_code}\t{err}", file=sys.stderr)
 
+        # When the throttle hits a 403, automatically sleep for 30 minutes.
+        # The 403 means we're temporarily banned because we've exceeded the
+        # rate limits. This coro will *not* stop here; rather, any new coro
+        # that acquires the semaphore will sleep until the pause ends before
+        # continuing on.
+        if status_code == 403:
+            print(f"403 detected! Sleeping for {AUTO_BAN_TIMEOUT/60.} minute(s).")
+            await throttle.pause(AUTO_BAN_TIMEOUT)
+
         # Write CSV
         writer = None
         with open(tout, "w") as fh:
@@ -282,7 +294,7 @@ async def scrape_tiles(
         await f
 
 
-def get_tiles(geom: tile_tools.cover.Geom, zoom: int) -> list[mercantile.Tile]:
+def get_tiles(geom: tile_tools.Geom, zoom: int) -> list[mercantile.Tile]:
     """Get a list of mercantile tiles.
 
     Args:
@@ -311,7 +323,7 @@ def run(
     concurrency: int,
     rate: float,
 ):
-    """Scrabe Fabric address data bounded by the given GeoJSON feature.
+    """Scrape Fabric address data bounded by the given GeoJSON feature.
 
     Args:
         tile_dir - Directory where tiles should be stored.

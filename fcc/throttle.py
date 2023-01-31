@@ -115,15 +115,44 @@ class Throttle:
         """
         self.sem = asyncio.Semaphore(concurrency)
         self.bucket = TokenBucket(rate, rate)
+        self.sleep_lock = asyncio.Lock()
+        self.sleep_until = 0.0
 
     async def acquire(self):
         """Wait until throttle has capacity for this request."""
         await self.sem.acquire()
+        t_now = time.monotonic()
+        while t_now < self.sleep_until:
+            await asyncio.sleep(max(0, self.sleep_until - t_now))
+            # In theory we might have been asked to sleep again while we were
+            # sleeping here, so check again.
+            t_now = time.monotonic()
         await self.bucket.consume(1)
 
     def release(self):
         """Release the lock."""
         self.sem.release()
+
+    async def pause(self, td: float):
+        """Tell the throttle to stop for the given number of seconds.
+
+        If the throttle is already sleeping and the new `td` is less than the
+        remaining sleep time, it is a no-op; otherwise the deadline is extended
+        only by the marginal difference. In other words, sleep times are
+        absolute and not additive.
+
+        This method does **not** block for the extent of the sleep; instead,
+        the sleep is applied on the coroutines that have acquired the
+        semaphore (thus blocking every other coroutine as well).
+
+        Args:
+            td - Time delta to pause the throttle for, in seconds
+        """
+        async with self.sleep_lock:
+            t_now = time.monotonic()
+            t_until = t_now + td
+            if t_until > self.sleep_until:
+                self.sleep_until = t_until
 
     async def __aenter__(self):
         """Enter async context."""
