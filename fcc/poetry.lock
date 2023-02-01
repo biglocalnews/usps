@@ -22,6 +22,18 @@ test = ["contextlib2", "coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "mock (>=
 trio = ["trio (>=0.16,<0.22)"]
 
 [[package]]
+name = "async-throttle"
+version = "0.1.0"
+description = "Multipurpose asyncio throttle"
+category = "main"
+optional = false
+python-versions = ">=3.10,<4.0"
+files = [
+    {file = "async_throttle-0.1.0-py3-none-any.whl", hash = "sha256:83c397d117bd6d67e85cdbe107eaf6c44bad08dde4093be2ec9a5f96f5254e7c"},
+    {file = "async_throttle-0.1.0.tar.gz", hash = "sha256:8e16a1180255b3710842591674f751a0f5e3bdf6ebd3c140558191573c6dae48"},
+]
+
+[[package]]
 name = "certifi"
 version = "2022.12.7"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -378,21 +390,19 @@ files = [
 
 [[package]]
 name = "tile-tools"
-version = "0.1.0"
+version = "0.1.1"
 description = "A collection of tools for navigating Mapbox tiles."
 category = "main"
 optional = false
-python-versions = "^3.10"
-files = []
-develop = false
+python-versions = ">=3.10,<3.12"
+files = [
+    {file = "tile_tools-0.1.1-py3-none-any.whl", hash = "sha256:f8ddab0056b30669b261d86ff0219915f4701779caa2671b684388f17d5b81cd"},
+    {file = "tile_tools-0.1.1.tar.gz", hash = "sha256:7f615a3b2fad76a929ac85d8fc01667aac96a2a583642cdb5a5471037bf1b656"},
+]
 
 [package.dependencies]
-geojson = "^2.5.0"
-mercantile = "^1.2.1"
-
-[package.source]
-type = "directory"
-url = "../../tile-tools"
+geojson = ">=2.5.0,<3.0.0"
+mercantile = ">=1.2.1,<2.0.0"
 
 [[package]]
 name = "tqdm"
@@ -417,5 +427,5 @@ telegram = ["requests"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.10"
-content-hash = "2baccd5568b368ea38e54d63181d450cea9d4d202b4de87db245f13d39c5b613"
+python-versions = "^3.10,<3.12"
+content-hash = "2489ef19bf230524888e8d127db2326ca4b37868d2071f88417b9980971960ee"

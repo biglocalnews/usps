@@ -13,7 +13,7 @@ import httpx
 import mapbox_vector_tile
 import mercantile
 import tile_tools
-from throttle import Throttle
+from async_throttle import Throttle
 from tqdm.asyncio import tqdm
 
 # Fabric doesn't have a coarser granularity available.
