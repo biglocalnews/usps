@@ -9,6 +9,7 @@ class SearchResult:
     gid: int
     kind: str
     name: str
+    secondary: str
 
 
 def _compile_query(q: str) -> str:
@@ -22,7 +23,7 @@ async def search_tiger(
     """Perform a search on the TIGER places db."""
     stmt = text(
         """
-        SELECT gid, kind, name
+        SELECT gid, kind, name, secondary
         FROM haystack
         WHERE tsv @@ to_tsquery(:q)
         LIMIT :limit
@@ -31,4 +32,7 @@ async def search_tiger(
 
     results = await conn.execute(stmt, {"q": _compile_query(q), "limit": limit})
 
-    return [SearchResult(gid=gid, kind=kind, name=name) for gid, kind, name in results]
+    return [
+        SearchResult(gid=gid, kind=kind, name=name, secondary=secondary)
+        for gid, kind, name, secondary in results
+    ]

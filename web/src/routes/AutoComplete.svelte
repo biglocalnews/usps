@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {Badge} from 'flowbite-svelte';
   import {createEventDispatcher} from 'svelte';
   import type {ShapePointer} from '../lib/api.ts';
 
@@ -22,6 +23,40 @@
     e.preventDefault();
     dispatch('select', i);
   };
+
+  const colorize = (kind: string) => {
+    switch (kind) {
+      case 'state':
+        return 'red';
+      case 'county':
+        return 'green';
+      case 'cousub':
+        return 'blue';
+      case 'place':
+        return 'purple';
+      case 'tract':
+        return 'yellow';
+      default:
+        return 'dark';
+    }
+  };
+
+  const labelize = (kind: string) => {
+    switch (kind) {
+      case 'state':
+        return 'State';
+      case 'county':
+        return 'County';
+      case 'cousub':
+        return 'County Subdivision';
+      case 'place':
+        return 'Place';
+      case 'tract':
+        return 'Tract';
+      default:
+        return kind;
+    }
+  };
 </script>
 
 <div class="relative">
@@ -38,7 +73,11 @@
           class:bg-sky-500={selected === i}
           on:mousedown={(e) => handleClick(e, i)}
         >
-          {opt.name}
+          <span>{opt.name}</span>
+          <span class="text-stone-300">{opt.secondary}</span>
+          <div class="float-right">
+            <Badge color={colorize(opt.kind)}>{labelize(opt.kind)}</Badge>
+          </div>
         </li>
       {/each}
     </ul>

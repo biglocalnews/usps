@@ -20,7 +20,7 @@ const url = (path: string, search?: Record<string, any>) => {
  *
  * These are determined by the `/search` feature in the API.
  */
-export type ShapeKind = 'state' | 'county' | 'cousub';
+export type ShapeKind = 'state' | 'county' | 'cousub' | 'place' | 'tract';
 
 /**
  * Unit of sample size. Can be either a total count or percentage.
@@ -35,6 +35,7 @@ export type SampleSizeUnit = 'total' | 'pct';
  */
 export type ShapePointer = {
   name: string;
+  secondary: string;
   gid: number;
   kind: ShapeKind;
 };

@@ -23,6 +23,7 @@ CREATE MATERIALIZED VIEW haystack AS (
         gid,
         'state' AS kind,
         name,
+        'USA' AS secondary,
         to_tsvector('english', name) AS tsv
     FROM tiger.state
 
@@ -32,7 +33,8 @@ CREATE MATERIALIZED VIEW haystack AS (
     SELECT
         c.gid,
         'county' AS kind,
-        c.namelsad || ', ' || s.name AS name,
+        c.namelsad AS name,
+        s.name AS secondary,
         to_tsvector('english', concat_ws(' ', c.namelsad, s.name)) AS tsv
     FROM tiger.county c
     LEFT JOIN tiger.state s
@@ -43,19 +45,50 @@ CREATE MATERIALIZED VIEW haystack AS (
     -- County subdivisions (e.g., "town")
     SELECT
         c.gid,
-        'cousub' as kind,
-        c.name || ', ' || s.name AS name,
+        'cousub' AS kind,
+        c.name AS name,
+        s.name AS secondary,
         to_tsvector('english', concat_ws(' ', c.namelsad, s.name)) AS tsv
     FROM tiger.cousub c
     LEFT JOIN tiger.state s
     ON c.statefp = s.statefp
 
+    UNION ALL
+
+    -- Places (e.g., "village")
+    SELECT
+        c.gid,
+        'place' AS kind,
+        c.namelsad AS name,
+        s.name AS secondary,
+        to_tsvector('english', concat_ws(' ', c.namelsad, s.name)) AS tsv
+    FROM tiger.place c
+    LEFT JOIN tiger.state s
+    ON c.statefp = s.statefp
+
+    UNION ALL
+
+    -- Tracts
+    SELECT
+        t.gid,
+        'tract' AS kind,
+        t.namelsad AS name,
+        c.namelsad || ', ' || s.name AS secondary,
+        to_tsvector('english', concat_ws(' ', t.namelsad, c.namelsad, s.name)) AS tsv
+        FROM tiger.tract t
+        LEFT JOIN tiger.county c
+        ON t.statefp = c.statefp AND t.countyfp = c.countyfp
+        LEFT JOIN tiger.state s
+        ON t.statefp = s.statefp
+
     -- TODO add more possible search features:
     --   BlockGroup
-    --   Tract
-    --   Place. There is some overlap with cousub here, but they are meaningfully different.
     --   Zip. This would require enabling zip geometries, which are expensive.
+    --   Leg district. Requires downloading more data.
 );
 
 -- Create a search index on the tsv column.
 CREATE INDEX htsv_idx ON haystack USING GIN (tsv);
+
+-- Create another index on the type column.
+CREATE INDEX hkind_idx ON haystack (kind);
