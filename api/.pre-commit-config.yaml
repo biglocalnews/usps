@@ -43,6 +43,6 @@ repos:
       - id: fe-pretty-quick
         name: fe-pretty-quick
         language: system
-        entry: "yarn run --cwd web pretty-quick --staged"
+        entry: "yarn --cwd web run pretty-quick --staged"
         pass_filenames: false
         always_run: true

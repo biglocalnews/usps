@@ -57,7 +57,7 @@
           });
         }
         popup.setLngLat(popupData.geometry.coordinates);
-        popup.setHTML(`<div>${popupData.properties.address}</div>`);
+        popup.setHTML(`<div>${popupData.properties.addr}</div>`);
         map.flyTo({zoom: 13, center: popupData.geometry.coordinates});
       }
     }
