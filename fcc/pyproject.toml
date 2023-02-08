@@ -15,7 +15,13 @@ tqdm = "^4.64.1"
 httpx = "^0.23.3"
 tile-tools = "0.1.1"
 async-throttle = "^0.1.0"
+geoalchemy2 = "^0.13.1"
+asyncpg = "^0.27.0"
+orjson = "^3.8.5"
+greenlet = "^2.0.2"
 
+[tool.isort]
+profile = "black"
 
 [build-system]
 requires = ["poetry-core"]
