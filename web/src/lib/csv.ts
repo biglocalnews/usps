@@ -16,7 +16,8 @@ const quo = (s: string | number | boolean) => {
  * Convert address feature list to a CSV.
  */
 export const addressListToCsv = (addresses: Address[]) => {
-  let csv = 'address,building_type_code,unit_count,longitude,latitude';
+  let csv =
+    'address,building_type_code,unit_count,longitude,latitude,statefp,countyfp,tractce,blkgrpce';
   for (let addr of addresses) {
     csv += '\n';
     const row = [
@@ -25,6 +26,10 @@ export const addressListToCsv = (addresses: Address[]) => {
       addr.properties.units,
       addr.geometry.coordinates[0],
       addr.geometry.coordinates[1],
+      addr.properties.statefp,
+      addr.properties.countyfp,
+      addr.properties.tractce,
+      addr.properties.blkgrpce,
     ].map((c) => quo(c));
     csv += row.join(',');
   }

@@ -74,6 +74,10 @@ export type Address = GeoJSON.Feature<
     addr: string;
     type: BuildingType;
     units: number;
+    statefp: number;
+    countyfp: number;
+    tractce: number;
+    blkgrpce: number;
   }
 >;
 

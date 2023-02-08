@@ -81,8 +81,25 @@ CREATE MATERIALIZED VIEW haystack AS (
         LEFT JOIN tiger.state s
         ON t.statefp = s.statefp
 
+    UNION ALL
+
+    -- Blockgroups
+    SELECT
+        b.gid,
+        'bg' AS kind,
+        b.namelsad AS name,
+        t.namelsad || ', ' || c.namelsad || ', ' || s.name AS secondary,
+        to_tsvector('english', concat_ws(' ', b.namelsad, t.namelsad, c.namelsad, s.name)) AS tsv
+        FROM tiger.bg b
+        LEFT JOIN tiger.tract t
+        ON b.statefp = t.statefp AND b.countyfp = t.countyfp AND b.tractce = t.tractce
+        LEFT JOIN tiger.county c
+        ON b.statefp = c.statefp AND b.countyfp = c.countyfp
+        LEFT JOIN tiger.state s
+        ON b.statefp = s.statefp
+
+
     -- TODO add more possible search features:
-    --   BlockGroup
     --   Zip. This would require enabling zip geometries, which are expensive.
     --   Leg district. Requires downloading more data.
 );

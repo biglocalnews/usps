@@ -160,13 +160,21 @@ async def draw_address_sample(
                 {addr_table}.addr addr,
                 St_AsLatLonText({addr_table}.point, 'D.DDDDDDDDD') p,
                 {addr_table}.building_type_code btc,
-                {addr_table}.unit_count units
+                {addr_table}.unit_count units,
+                {addr_table}.point point
             FROM {addr_table}, bounds
             WHERE St_Contains(bounds.g, {addr_table}.point) {addr_q}
+        ),
+        sample AS (
+            SELECT addr, p, btc, units, point
+            FROM bounded
+            {sample_q}
         )
-        SELECT addr, p, btc, units
-        FROM bounded
-        {sample_q}
+        -- TODO: this could be precomputed / cached as a column on the addr table
+        SELECT s.addr, s.p, s.btc, s.units, b.statefp, b.countyfp, b.tractce, b.blkgrpce
+        FROM sample s
+        LEFT JOIN bg b
+        ON ST_Contains(b.the_geom, s.point)
     """
     )
 
@@ -178,7 +186,7 @@ async def draw_address_sample(
 
     sample = AddressSample(n=params.n, addresses=[], validation=[])
     for line in res:
-        addr, pointtxt, btc, units = line
+        addr, pointtxt, btc, units, statefp, countyfp, tractce, blkgrpce = line
         lat, lon = [float(c) for c in pointtxt.split()]
         ft = Feature(
             geometry=Point([lon, lat]),
@@ -186,6 +194,10 @@ async def draw_address_sample(
                 "addr": addr,
                 "type": btc,
                 "units": units,
+                "statefp": statefp,
+                "countyfp": countyfp,
+                "tractce": tractce,
+                "blkgrpce": blkgrpce,
             },
         )
         sample.addresses.append(ft)
