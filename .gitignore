@@ -7,3 +7,5 @@ data/*
 !data/tiles/.gitkeep
 __pycache__/
 *.pyc
+*.o
+*.so
