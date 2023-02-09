@@ -30,10 +30,12 @@ async def search_tiger(
 
     kind_clause = "kind = :kind AND" if kind_filter else ""
 
-    # Assemble the query
+    # Assemble the query. We rank the results to prefer shorter results. This
+    # naturally surfaces the real place/cousub/county/state instead of the
+    # nested geometries like tracts and blockgroups.
     stmt = text(
         f"""
-        SELECT gid, kind, name, secondary, ts_rank_cd(tsv, q) as rank
+        SELECT gid, kind, name, secondary, ts_rank_cd(tsv, q, 2) as rank
         FROM haystack, to_tsquery(:q) q
         WHERE {kind_clause} q @@ tsv
         ORDER BY rank DESC
