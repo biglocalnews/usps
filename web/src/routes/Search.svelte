@@ -24,6 +24,9 @@
   // List of search results from the API.
   let searchResults: api.ShapePointer[] = [];
 
+  // TS of last query fired.
+  let mark = 0;
+
   // Dispatch the "select" event to report the chosen option.
   const doSelect = () => {
     const opt = searchResults[selected];
@@ -52,8 +55,16 @@
       searchResults = [];
       return;
     }
-    searchResults = await api.search(query);
-    selected = clampSelectedIndex(selected);
+    const t = Date.now();
+    mark = t;
+    const results = await api.search(query);
+    // If this was still the latest query, then update results in the UI.
+    // Otherwise we'll just discard them. `mark` might have been changed while
+    // we were waiting for results.
+    if (mark === t) {
+      searchResults = results;
+      selected = clampSelectedIndex(selected);
+    }
   };
 
   // Debounce search to avoid too many requests.
