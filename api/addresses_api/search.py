@@ -21,18 +21,38 @@ async def search_tiger(
     conn: AsyncConnection, q: str, limit: int = 10
 ) -> list[SearchResult]:
     """Perform a search on the TIGER places db."""
+    # Interpret filters on `kind` with a `{kind}:{q}` prefix.
+    kind_filter = ""
+    kind_part, kind_sep, rest_part = q.partition(":")
+    if kind_sep:
+        kind_filter = kind_part
+        q = rest_part
+
+    kind_clause = "kind = :kind AND" if kind_filter else ""
+
+    # Assemble the query
     stmt = text(
-        """
-        SELECT gid, kind, name, secondary
-        FROM haystack
-        WHERE tsv @@ to_tsquery(:q)
+        f"""
+        SELECT gid, kind, name, secondary, ts_rank_cd(tsv, q) as rank
+        FROM haystack, to_tsquery(:q) q
+        WHERE {kind_clause} q @@ tsv
+        ORDER BY rank DESC
         LIMIT :limit
     """
     )
 
-    results = await conn.execute(stmt, {"q": _compile_query(q), "limit": limit})
+    # Assemble query parameters
+    params = {
+        "q": _compile_query(q),
+        "limit": limit,
+    }
+
+    if kind_filter:
+        params["kind"] = kind_filter
+
+    results = await conn.execute(stmt, params)
 
     return [
         SearchResult(gid=gid, kind=kind, name=name, secondary=secondary)
-        for gid, kind, name, secondary in results
+        for gid, kind, name, secondary, _ in results
     ]
