@@ -43,6 +43,7 @@ services:
   db:
     platform: linux/amd64
     image: postgis/postgis:14-3.3
+    shm_size: 1g
     restart: always
     volumes:
       - pgdata:/var/lib/postgresql/data
