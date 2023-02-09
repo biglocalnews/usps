@@ -12,6 +12,9 @@ if [ "$states" = "all" ]; then
     export states="AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,NH,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY"
 fi
 
+# Make sure to use upper case. TIGER scripts don't work otherwise.
+export states=$(echo "$states" | tr '[:lower:]' '[:upper:]')
+
 # Get the value of a secret, potentially with a default value.
 # Secrets are files in `/run/secrets`.
 get_secret () {

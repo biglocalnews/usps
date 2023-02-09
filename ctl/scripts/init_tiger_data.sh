@@ -2,7 +2,7 @@
 set -ex
 
 # Import common tools.
-"$(dirname "$0")/common.sh"
+. "$(dirname "$0")/common.sh" "$1"
 
 # Set up directories
 SCRIPT_DIR=${SCRIPT_DIR:-/tiger_loader}
@@ -33,13 +33,18 @@ patch_load_script () {
     mv "$tmp" "$1"
 }
 
-# Generate nation script
-psql -c "SELECT Loader_Generate_Nation_Script('sh')" -tA > "$SCRIPT_DIR/nation.sh"
-patch_load_script "$SCRIPT_DIR/nation.sh"
-chmod +x "$SCRIPT_DIR/nation.sh"
-
-# Run the nation script
-"$SCRIPT_DIR/nation.sh"
+# Generate & run the nation script if it hasn't been set up already.
+has_state_tbl=$(psql -c "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname='tiger_data' AND tablename='state_all');" --csv | tail -1)
+if [[ "$has_state_tbl" == "f" ]]; then
+    # Generate nation script
+    psql -c "SELECT Loader_Generate_Nation_Script('sh')" -tA > "$SCRIPT_DIR/nation.sh"
+    patch_load_script "$SCRIPT_DIR/nation.sh"
+    chmod +x "$SCRIPT_DIR/nation.sh"
+    # Run it
+    "$SCRIPT_DIR/nation.sh"
+else
+    echo "Looks like national data has been set up already, so skipping that here"
+fi
 
 # Select additional features to load for states
 # We do this instead of running the Loader_Generate_Census_Script separately,
