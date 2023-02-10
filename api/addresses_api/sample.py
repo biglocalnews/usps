@@ -148,7 +148,7 @@ async def draw_address_sample(
     bounds_q, bounds_args = _get_bounds_subquery(params)
     addr_q, addr_args = _get_addr_clause(params)
     sample_q, sample_args = _get_sample_clause(params)
-    addr_table = "fabric_address"
+    addr_table = "address"
     stmt = text(
         f"""
         WITH
@@ -161,20 +161,17 @@ async def draw_address_sample(
                 St_AsLatLonText({addr_table}.point, 'D.DDDDDDDDD') p,
                 {addr_table}.building_type_code btc,
                 {addr_table}.unit_count units,
-                {addr_table}.point point
+                {addr_table}.point point,
+                {addr_table}.statefp,
+                {addr_table}.countyfp,
+                {addr_table}.tractce,
+                {addr_table}.blkgrpce
             FROM {addr_table}, bounds
             WHERE St_Contains(bounds.g, {addr_table}.point) {addr_q}
-        ),
-        sample AS (
-            SELECT addr, p, btc, units, point
-            FROM bounded
-            {sample_q}
         )
-        -- TODO: this could be precomputed / cached as a column on the addr table
-        SELECT s.addr, s.p, s.btc, s.units, b.statefp, b.countyfp, b.tractce, b.blkgrpce
-        FROM sample s
-        LEFT JOIN bg b
-        ON ST_Contains(b.the_geom, s.point)
+        SELECT addr, p, btc, units, point, statefp, countyfp, tractce, blkgrpce
+        FROM bounded
+        {sample_q}
     """
     )
 
