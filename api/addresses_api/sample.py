@@ -155,25 +155,36 @@ async def draw_address_sample(
         bounds AS (
             {bounds_q}
         ),
+        roughpass AS (
+            SELECT statefp, countyfp, tractce
+            FROM tract, bounds
+            WHERE St_Intersects(the_geom, bounds.g)
+        ),
+        restricted AS (
+            SELECT a.*
+            FROM {addr_table} a
+            INNER JOIN roughpass b
+            ON a.statefp = b.statefp AND a.countyfp = b.countyfp AND a.tractce = b.tractce
+        ),
         bounded AS (
             SELECT
-                {addr_table}.addr addr,
-                St_AsLatLonText({addr_table}.point, 'D.DDDDDDDDD') p,
-                {addr_table}.building_type_code btc,
-                {addr_table}.unit_count units,
-                {addr_table}.point point,
-                {addr_table}.statefp,
-                {addr_table}.countyfp,
-                {addr_table}.tractce,
-                {addr_table}.blkgrpce
-            FROM {addr_table}, bounds
-            WHERE St_Contains(bounds.g, {addr_table}.point) {addr_q}
+                restricted.addr addr,
+                St_AsLatLonText(restricted.point, 'D.DDDDDDDDD') p,
+                restricted.building_type_code btc,
+                restricted.unit_count units,
+                restricted.statefp,
+                restricted.countyfp,
+                restricted.tractce,
+                restricted.blkgrpce
+            FROM restricted, bounds
+            WHERE St_Contains(bounds.g, restricted.point) {addr_q}
         )
-        SELECT addr, p, btc, units, point, statefp, countyfp, tractce, blkgrpce
+        SELECT addr, p, btc, units, statefp, countyfp, tractce, blkgrpce
         FROM bounded
         {sample_q}
     """
     )
+    print(stmt)
 
     # Run compiled query
     res = await conn.execute(
