@@ -50,7 +50,7 @@
   let error: Error | null = null;
   let mapCoord: Address | null = null;
   let typeFilters = {
-    R: true,
+    R: false,
     B: false,
     X: false,
   };
@@ -240,6 +240,7 @@
                 </Dropdown>
               </ButtonGroup>
             </NavLi>
+            <!--
             <NavLi>
               <Button
                 size="xs"
@@ -258,7 +259,7 @@
                   </DropdownItem>
                 {/each}
               </Dropdown>
-            </NavLi>
+            </NavLi>-->
             <NavLi>addresses from</NavLi>
             <NavLi>
               <Badge id="bound" large>

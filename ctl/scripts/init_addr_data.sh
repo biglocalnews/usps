@@ -33,4 +33,7 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     cat ingest-oa.sql | psql
 done
 
+# Create the search view
+cat create-oa-sample-view.sql | psql
+
 echo 'done'

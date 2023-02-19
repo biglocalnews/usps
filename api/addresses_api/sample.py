@@ -109,6 +109,7 @@ def _get_addr_clause(params: SampleRequest) -> Tuple[str, dict]:
     args = {f"t{i}": v for i, v in enumerate(params.types)}
     placeholders = ",".join(f":{p}" for p in args.keys())
 
+    # XXX: only supported for fabric address data
     return f"AND building_type_code IN ({placeholders})", args
 
 
@@ -170,8 +171,6 @@ async def draw_address_sample(
             SELECT
                 restricted.addr addr,
                 St_AsLatLonText(restricted.point, 'D.DDDDDDDDD') p,
-                restricted.building_type_code btc,
-                restricted.unit_count units,
                 restricted.statefp,
                 restricted.countyfp,
                 restricted.tractce,
@@ -179,12 +178,11 @@ async def draw_address_sample(
             FROM restricted, bounds
             WHERE St_Contains(bounds.g, restricted.point) {addr_q}
         )
-        SELECT addr, p, btc, units, statefp, countyfp, tractce, blkgrpce
+        SELECT addr, p, statefp, countyfp, tractce, blkgrpce
         FROM bounded
         {sample_q}
     """
     )
-    print(stmt)
 
     # Run compiled query
     res = await conn.execute(
@@ -194,14 +192,12 @@ async def draw_address_sample(
 
     sample = AddressSample(n=params.n, addresses=[], validation=[])
     for line in res:
-        addr, pointtxt, btc, units, statefp, countyfp, tractce, blkgrpce = line
+        addr, pointtxt, statefp, countyfp, tractce, blkgrpce = line
         lat, lon = [float(c) for c in pointtxt.split()]
         ft = Feature(
             geometry=Point([lon, lat]),
             properties={
                 "addr": addr,
-                "type": btc,
-                "units": units,
                 "statefp": statefp,
                 "countyfp": countyfp,
                 "tractce": tractce,

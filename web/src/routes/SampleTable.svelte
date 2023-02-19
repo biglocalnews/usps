@@ -51,18 +51,12 @@
       <Table hoverable>
         <TableHead>
           <TableHeadCell>Address</TableHeadCell>
-          <TableHeadCell>Building Type</TableHeadCell>
-          <TableHeadCell>Unit Count</TableHeadCell>
           <TableHeadCell>Coordinates</TableHeadCell>
         </TableHead>
         <TableBody>
           {#each rows as row}
             <TableBodyRow on:click={() => hover(row)}>
               <TableBodyCell>{row.properties.addr}</TableBodyCell>
-              <TableBodyCell
-                >{labelForBldgType(row.properties.type)}</TableBodyCell
-              >
-              <TableBodyCell>{row.properties.units}</TableBodyCell>
               <TableBodyCell
                 >{formatcoords(
                   row.geometry.coordinates,
