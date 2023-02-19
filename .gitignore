@@ -9,3 +9,9 @@ __pycache__/
 *.pyc
 *.o
 *.so
+.gitsecret/keys/random_seed
+!*.secret
+secrets/db_host.prod
+secrets/db_name.prod
+secrets/db_pass.prod
+secrets/db_user.prod
