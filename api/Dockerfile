@@ -21,4 +21,4 @@ RUN poetry install --only main --no-interaction --no-ansi
 
 COPY . /code
 
-CMD ["uvicorn", "addresses_api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["uvicorn", "addresses_api:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "4"]

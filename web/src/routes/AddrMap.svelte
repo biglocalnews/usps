@@ -4,7 +4,7 @@
   import extent from '@mapbox/geojson-extent';
   import {onMount, createEventDispatcher} from 'svelte';
   import type {Shape, Address} from '../lib/api.ts';
-  import * as config from '../lib/config.ts';
+  import {env} from '$env/dynamic/public';
 
   const dispatch = createEventDispatcher();
 
@@ -12,7 +12,7 @@
   export let addresses: Address[] = [];
   export let popupData: Address | null = null;
 
-  mapboxgl.accessToken = config.mapboxToken;
+  mapboxgl.accessToken = env.PUBLIC_MAPBOX_TOKEN;
 
   // Mapbox map - not available until the component mounts.
   let map: mapboxgl.Map | null = null;

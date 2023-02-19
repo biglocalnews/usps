@@ -1,6 +1,6 @@
 <script lang="ts">
   import {onMount, createEventDispatcher} from 'svelte';
-  import {debounce} from 'lodash';
+  import {debounce} from 'lodash-es';
   import {Search, Helper} from 'flowbite-svelte';
   import AutoComplete from './AutoComplete.svelte';
   import * as api from '../lib/api.ts';

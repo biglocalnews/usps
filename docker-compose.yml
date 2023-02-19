@@ -1,6 +1,43 @@
 version: "3.9"
 
 services:
+  # Load balancer / reverse proxy
+  lb:
+    platform: linux/amd64
+    image: nginx:1.23.3
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - public
+    depends_on:
+      - api
+      - web
+
+  # UI / Static rendering
+  web:
+    platform: linux/amd64
+    build:
+      context: web
+      labels:
+        - "edu.stanford.bln.addy.service=web"
+    image: addyweb:latest
+    restart: always
+    networks:
+      - public
+    expose:
+      - 3000
+    ports:
+      - 3000:3000
+    secrets:
+      - source: node_env
+        target: /code/.env
+        mode: 0400
+    depends_on:
+      - api
+
   # API service
   api:
     platform: linux/amd64
@@ -8,14 +45,15 @@ services:
       context: api
       labels:
         - "edu.stanford.bln.addy.service=api"
-    image: ${API_IMAGE}:${API_VERSION}
+    image: addyapi:latest
     restart: always
     networks:
       - private
+      - public
     expose:
-      - 8000
+      - 8080
     ports:
-      - 8000:8000
+      - 8080:8080
     secrets:
       - source: db_pass
         target: /run/secrets/db_pass
@@ -39,7 +77,7 @@ services:
       context: ctl
       labels:
         - "edu.stanford.bln.addy.service=ctl"
-    image: ${CTL_IMAGE}:${CTL_VERSION}
+    image: addyctl:latest
     restart: always
     networks:
       - private
@@ -124,6 +162,8 @@ secrets:
     file: ./secrets/db_user.dev
   db_name:
     file: ./secrets/db_name.dev
+  node_env:
+    file: ./secrets/node_env.dev
 
 networks:
   private:

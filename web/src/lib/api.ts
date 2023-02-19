@@ -1,4 +1,6 @@
-import {baseUrl} from './config';
+import {env} from '$env/dynamic/public';
+
+const baseUrl = (env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
 
 /**
  * Get the full API URL for the given path.
@@ -6,13 +8,22 @@ import {baseUrl} from './config';
  * Optionally pass in URL parameters as well.
  */
 const url = (path: string, search?: Record<string, any>) => {
-  const u = new URL(path, baseUrl);
-  if (search) {
-    for (let k of Object.keys(search)) {
-      u.searchParams.set(k, search[k]);
-    }
+  let u = baseUrl;
+  if (path[0] !== '/') {
+    u += '/';
   }
-  return u.toString();
+  u += path;
+
+  if (search) {
+    const searchParams = new URLSearchParams();
+    for (let k of Object.keys(search)) {
+      searchParams.set(k, search[k]);
+    }
+    u += '?';
+    u += searchParams.toString();
+  }
+
+  return u;
 };
 
 /**
