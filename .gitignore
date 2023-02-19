@@ -15,3 +15,4 @@ secrets/db_host.prod
 secrets/db_name.prod
 secrets/db_pass.prod
 secrets/db_user.prod
+secrets/node_env.prod
