@@ -1,6 +1,36 @@
 version: "3.9"
 
 services:
+  # API service
+  api:
+    platform: linux/amd64
+    build:
+      context: api
+      labels:
+        - "edu.stanford.bln.addy.service=api"
+    image: ${API_IMAGE}:${API_VERSION}
+    restart: always
+    networks:
+      - private
+    expose:
+      - 8000
+    ports:
+      - 8000:8000
+    secrets:
+      - source: db_pass
+        target: /run/secrets/db_pass
+        mode: 0400
+      - source: db_user
+        target: /run/secrets/db_user
+        mode: 0400
+      - source: db_host
+        target: /run/secrets/db_host
+        mode: 0400
+      - source: db_name
+        target: /run/secrets/db_name
+    depends_on:
+      - db
+
   # PostGIS controller node. Contains scripts and other tools for ingesting
   # TIGER data.
   ctl:
@@ -72,16 +102,14 @@ services:
       retries: 20
     deploy:
       # NOTE: Postgres is not set up for replication in this compose file.
-      # You will have problems if you try to scale this db service. You should
-      # not use the docker-compose DB in production anyway.
+      # You will have problems if you try to scale this db service.
       replicas: 1
       placement:
         max_replicas_per_node: 1
 
 volumes:
   # Volume to contain postgres data.
-  # NOTE: This is an ephemeral volume. Do not use postgres in docker-compose in
-  # production.
+  # This is an ephemeral volume in dev.
   pgdata:
     driver_opts: {}
 
@@ -99,3 +127,4 @@ secrets:
 
 networks:
   private:
+  public:
