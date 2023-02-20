@@ -1,7 +1,7 @@
 -- The following queries update missing information in the `oa_staging` table
 -- using reverse geocoding from TIGER.
 
-CREATE UNIQUE INDEX oa_s_hash_idx ON oa_staging(hash);
+CREATE INDEX oa_s_hash_idx ON oa_staging(hash);
 
 -- Fill in missing state / zip using reverse geocoding.
 UPDATE oa_staging
