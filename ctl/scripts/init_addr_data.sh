@@ -24,7 +24,7 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     done
 
     # Make sure state is filled out for every address
-    psql -c "UPDATE $ADDR_STAGING_TABLE SET region=$state WHERE region = '' OR region IS NULL" -tA
+    psql -c "UPDATE $ADDR_STAGING_TABLE SET region='$state' WHERE region = '' OR region IS NULL" -tA
 
     # Fill in other missing information
     cat oa-fill-missing.sql | psql
