@@ -9,6 +9,7 @@ cd /addrdata
 ADDR_TABLE="oa"
 ADDR_STAGING_TABLE="oa_staging"
 
+# TODO - check if address standardizer exists and if not run CREATE EXTENSION address_standardizer
 # TODO - download .zip files from OA server.
 # TODO - index the states in each zip so we can limit downloads
 

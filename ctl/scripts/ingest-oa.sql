@@ -25,6 +25,7 @@ pagc_normalize_address(
 ) a
 ON true
 WHERE oas.hash NOT IN (SELECT hash from oa)
+ON CONFLICT DO NOTHING
 ;
 
 COMMIT;
