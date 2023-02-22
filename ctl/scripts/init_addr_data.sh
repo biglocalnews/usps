@@ -4,8 +4,6 @@ set -ex
 # Import common tools.
 . "$(dirname "$0")/common.sh" "$1"
 
-cd /addrdata
-
 ADDR_TABLE="oa"
 ADDR_STAGING_TABLE="oa_staging"
 
@@ -74,6 +72,8 @@ psql -c "CREATE EXTENSION IF NOT EXISTS address_standardizer" -tA
 
 # Ingest all the geojson files into the DB.
 for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
+    cd /addrdata
+
     psql -c "DROP TABLE IF EXISTS $ADDR_STAGING_TABLE" -tA
 
     # Find the collection for this state
@@ -89,6 +89,8 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
 
     # Make sure state is filled out for every address
     psql -c "UPDATE $ADDR_STAGING_TABLE SET region='$state' WHERE region = '' OR region IS NULL" -tA
+
+    cd /
 
     # Fill in other missing information
     cat oa-fill-missing.sql | psql
