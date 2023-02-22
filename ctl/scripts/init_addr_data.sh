@@ -10,10 +10,10 @@ ADDR_TABLE="oa"
 ADDR_STAGING_TABLE="oa_staging"
 
 # Create an index of which batch download from OA contains which states.
-$collection_ne="collection-us-northeast"
-$collection_w="collection-us-west"
-$collection_mw="collection-us-midwest"
-$collection_s="collection-us-south"
+collection_ne="collection-us-northeast"
+collection_w="collection-us-west"
+collection_mw="collection-us-midwest"
+collection_s="collection-us-south"
 
 declare -A statelookup=(
     "[AL]"="$collection_s"
