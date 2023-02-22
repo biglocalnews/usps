@@ -77,7 +77,7 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     psql -c "DROP TABLE IF EXISTS $ADDR_STAGING_TABLE" -tA
 
     # Find the collection for this state
-    $col="${statelookup[$state]}"
+    col="${statelookup[$state]}"
     # Make sure we have the collection downloaded
     wget --mirror "https://v2.openaddresses.io/batch-prod/$col.zip"
 
