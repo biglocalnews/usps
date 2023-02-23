@@ -42,10 +42,11 @@
   >
     <TabItem open on:click={toggle}>
       <div slot="title" class="flex items-center gap-2">
+        <span>{Intl.NumberFormat().format(rows.length)} addresses</span>
         {#if collapse}
-          <ChevronUp size="16" /> <span>Show Data</span>
+          <ChevronUp size="16" />
         {:else}
-          <ChevronDown size="16" /> <span>Hide Data</span>
+          <ChevronDown size="16" />
         {/if}
       </div>
       <Table hoverable>
