@@ -1,21 +1,6 @@
 version: "3.9"
 
 services:
-  # Load balancer / reverse proxy
-  lb:
-    platform: linux/amd64
-    image: nginx:1.23.3
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    ports:
-      - 80:80
-      - 443:443
-    networks:
-      - public
-    depends_on:
-      - api
-      - web
-
   # UI / Static rendering
   web:
     platform: linux/amd64
@@ -149,6 +134,12 @@ volumes:
   # Volume to contain postgres data.
   # This is an ephemeral volume in dev.
   pgdata:
+    driver_opts: {}
+  # Volumes for certificates.
+  # These are not used on dev and are ephemeral.
+  certconf:
+    driver_opts: {}
+  certwww:
     driver_opts: {}
 
 secrets:
