@@ -215,9 +215,12 @@
         class="w-full fixed shadow"
         transition:fly={{y: -200, duration: 200}}
       >
-        <Navbar>
+        <Navbar
+          navDivClass="w-full flex flex-nowrap justify-between items-center"
+        >
           <NavBrand
-            ><Heading tag="h1" customSize="text-xl">US Address Sampler</Heading
+            ><Heading tag="h1" customSize="text-xl" class="mx-4"
+              >U.S.P.S.</Heading
             ></NavBrand
           >
           <NavUl
@@ -298,7 +301,7 @@
         transition:fly={{y: 200, duration: 200}}
       >
         <header class="py-8">
-          <Heading>US Address Sampler</Heading>
+          <Heading>US Places Service</Heading>
         </header>
         <div>
           <Search on:select={fetchShape} />
