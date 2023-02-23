@@ -27,12 +27,16 @@ CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING GIST (point);
 DROP TABLE IF EXISTS __TBL__;
 CREATE TABLE __TBL__() INHERITS (address);
 
+-- Try to stay true to the implementation of the pagc_normalizer:
+-- https://github.com/postgis/postgis/blob/f6def67654c25d812446239036cee44812613748/extras/tiger_geocoder/pagc_normalize/pagc_normalize_address.sql#L34
+-- Note that the example given in the TIGER documentation about how to improve
+-- performance doesn't currently work!
 WITH oas AS (
     SELECT
         hash,
         point,
         ROW(
-            (sa).house_num,
+            to_number(substring((sa).house_num, '[0-9]+'), '99999999'),
             (sa).predir,
             (sa).name,
             (sa).suftype,
@@ -41,7 +45,10 @@ WITH oas AS (
             (sa).city,
             (sa).state,
             (sa).postcode,
-        true)::norm_addy AS na
+            true,
+            NULL,
+            (sa).house_num
+        )::norm_addy AS na
     FROM (
         SELECT
             hash,
@@ -50,12 +57,12 @@ WITH oas AS (
                 'tiger.pagc_lex',
                 'tiger.pagc_gaz',
                 'tiger.pagc_rules',
-                oas.number || ','
-                || oas.street || ','
-                || oas.unit || ','
-                || oas.city || ','
-                || oas.region || ','
-                || coalesce(oas.postcode, '')
+                number || ','
+                || street || ','
+                || unit || ','
+                || city || ','
+                || region || ','
+                || coalesce(postcode, '')
             ) AS sa
             FROM __STAGE__
         ) g

@@ -104,10 +104,10 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     cd /
 
     # Fill in other missing information
-    cat oa-fill-missing.sql | sed 's^__TBL__^'"$staging"'^' | psql
+    cat oa-fill-missing.sql | sed 's^__TBL__^'"$staging"'^g' | psql
 
     # Ingest staging data to final table
-    cat ingest-oa.sql | sed 's^__TBL__^'"$tbl"'^' | sed 's^__STAGE__^'"$staging"'^' | psql
+    cat ingest-oa.sql | sed 's^__TBL__^'"$tbl"'^g' | sed 's^__STAGE__^'"$staging"'^g' | psql
 
     # Clean up staging table
     psql -c "DROP TABLE IF EXISTS $staging" -tA
