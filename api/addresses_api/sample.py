@@ -149,7 +149,8 @@ async def draw_address_sample(
     bounds_q, bounds_args = _get_bounds_subquery(params)
     addr_q, addr_args = _get_addr_clause(params)
     sample_q, sample_args = _get_sample_clause(params)
-    addr_table = "address"
+    # XXX(jnu): switch back to real table when maintenance is done!
+    addr_table = "address_old"
     stmt = text(
         f"""
         WITH

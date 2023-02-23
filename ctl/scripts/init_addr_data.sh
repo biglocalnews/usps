@@ -86,7 +86,7 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     # Find the collection for this state
     col="${statelookup[$state]}"
     # Make sure we have the collection downloaded.
-    # NOTE: some times we may actually want to update the OA data! Using the
+    # NOTE: sometimes we may actually want to update the OA data! Using the
     # --no-clobber option will avoid ever refetching the new addresses.
     # Ideally we just use the `--mirror` option, but currently that results
     # in a new batch being downloaded every single time it runs :(
@@ -103,11 +103,17 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
 
     cd /
 
-    # Fill in other missing information
+    # Fill in other missing columns using reverse geocoding.
     cat oa-fill-missing.sql | sed 's^__TBL__^'"$staging"'^g' | psql
 
     # Ingest staging data to final table
     cat ingest-oa.sql | sed 's^__TBL__^'"$tbl"'^g' | sed 's^__STAGE__^'"$staging"'^g' | psql
+
+    # Throw out invalid addresses. Keep the hash in a log so that we can
+    # investigate / fix them later.
+    mkdir -p /addrdata/err
+    psql -c "SELECT hash FROM $tbl WHERE addr = ''" --csv > "/addrdata/err/invalid-addr-$tbl.csv"
+    psql -c "DELETE FROM $tbl WHERE addr = ''" -tA
 
     # Clean up staging table
     psql -c "DROP TABLE IF EXISTS $staging" -tA
