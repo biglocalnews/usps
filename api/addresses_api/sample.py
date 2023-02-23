@@ -113,17 +113,22 @@ def _get_addr_clause(params: SampleRequest) -> Tuple[str, dict]:
     return f"AND building_type_code IN ({placeholders})", args
 
 
-def _get_sample_clause(params: SampleRequest) -> Tuple[str, dict]:
+def _get_sample_clause(params: SampleRequest, qmax: int = 50000) -> Tuple[str, dict]:
     """Get a clause for random sampling based on request.
+
+    Args:
+        params - query input parameters
+        qmax - hard limit on result sets
 
     Returns:
         A tuple with the clause and the bound parameters it references.
     """
     match params.unit:
         case "pct":
-            return "WHERE random() < :n", {"n": params.n / 100.0}
+            return "WHERE random() < :n LIMIT :m", {"n": params.n / 100.0, "m": qmax}
         case "total":
-            return "ORDER BY random() LIMIT :n", {"n": params.n}
+            # TODO: this is quite slow. Come up with a more efficient technique.
+            return "ORDER BY random() LIMIT :n", {"n": min(params.n, qmax)}
         case _:
             raise ValueError(f"invalid sample size unit {params.unit}")
 
