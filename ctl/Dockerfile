@@ -20,4 +20,7 @@ RUN mkdir -p /addrdata
 COPY ./scripts/*.sh .
 COPY ./scripts/*.sql .
 
+# Set DB credentials in the environment
+RUN echo "source /db.sh" >> /root/.bashrc
+
 CMD ["tail", "-f", "/dev/null"]

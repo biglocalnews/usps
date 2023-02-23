@@ -1,10 +1,10 @@
 -- The following queries update missing information in the `oa_staging` table
 -- using reverse geocoding from TIGER.
 
-CREATE INDEX oa_s_hash_idx ON oa_staging(hash);
+CREATE INDEX IF NOT EXISTS __TBL___hash_idx ON __TBL__(hash);
 
 -- Fill in missing state / zip using reverse geocoding.
-UPDATE oa_staging
+UPDATE __TBL__
 SET
 region = b.state,
 postcode = b.zip,
@@ -17,14 +17,14 @@ FROM (
         (addy)[1].location as location
     FROM (
         SELECT hash, wkb_geometry
-        FROM oa_staging
+        FROM __TBL__
         WHERE region = '' OR postcode = '' OR city = ''
     ) o
     LEFT JOIN LATERAL
-    reverse_geocode(o.wkb_geometry) g
+    reverse_geocode(o.wkb_geometry, false) g
     ON true
 ) b
-WHERE b.hash = oa_staging.hash
+WHERE b.hash = __TBL__.hash
 ;
 
 COMMIT;
