@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS address (
 -- FIPS indexes can narrow down the search space faster than spatial indexes.
 CREATE INDEX IF NOT EXISTS addr_fps_idx ON address (statefp, countyfp);
 -- Add a spatial index on all the points.
-CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING GIST (point);
+CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING SPGIST (point);
 
 -- Ingest data from the staging table to the final table.
 -- NOTE(s):
@@ -82,3 +82,7 @@ ON ST_Contains(b.the_geom, a.point)
 ;
 
 COMMIT;
+
+-- Create indexes based on the parent table's indexes.
+CREATE INDEX IF NOT EXISTS __TBL___fps_idx ON address (statefp, countyfp);
+CREATE INDEX IF NOT EXISTS __TBL___idx ON address USING SPGIST (point);
