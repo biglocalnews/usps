@@ -17,12 +17,11 @@ CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING SPGIST (point);
 
 -- Ingest data from the staging table to the final table.
 -- NOTE(s):
---  1. The point geometry is transformed to SRID 4269 to match TIGER data.
---  2. The pagc_normalize_address function has performance problems, so we are
+--  1. The pagc_normalize_address function has performance problems, so we are
 --     using the workaround described here:
 --     http://postgis.net/docs/manual-dev/Pagc_Normalize_Address.html
---  3. We join blockgroup info to enrich the downloads
---  4. Tables are inherited from the main `address` table so that it's easier
+--  2. We join blockgroup info to enrich the downloads
+--  3. Tables are inherited from the main `address` table so that it's easier
 --     to modularize the database.
 DROP TABLE IF EXISTS __TBL__;
 CREATE TABLE __TBL__() INHERITS (address);
@@ -52,7 +51,7 @@ WITH oas AS (
     FROM (
         SELECT
             hash,
-            St_Transform(wkb_geometry, 4269) AS point,
+            point,
             standardize_address(
                 'tiger.pagc_lex',
                 'tiger.pagc_gaz',

@@ -1,28 +1,58 @@
--- The following queries update missing information in the `oa_staging` table
--- using reverse geocoding from TIGER.
+-- The following queries update missing information in the staging table.
 
-CREATE INDEX IF NOT EXISTS __TBL___hash_idx ON __TBL__(hash);
+-- Transform the point geometry to SRID 4269 to match TIGER data.
+ALTER TABLE __TBL__ ADD COLUMN point geometry;
 
--- Fill in missing state / zip using reverse geocoding.
 UPDATE __TBL__
 SET
-region = b.state,
-postcode = b.zip,
-city = b.location
+point = ST_Transform(wkb_geometry, 4269)
+;
+
+-- Use indexes to hopefully speed up the updates.
+CREATE INDEX IF NOT EXISTS __TBL___hash_idx ON __TBL__ (hash);
+CREATE INDEX IF NOT EXISTS __TBL___point_idx ON __TBL__ USING SPGIST (point);
+
+-- Fill in missing city with a spatial join on place/cousub.
+UPDATE __TBL__
+SET
+city = coalesce(b.place, b.cousub)
 FROM (
     SELECT
         o.hash,
-        (addy)[1].zip as zip,
-        (addy)[1].stateAbbrev as state,
-        (addy)[1].location as location
+        p.name as place,
+        c.name as cousub
     FROM (
-        SELECT hash, wkb_geometry
+        SELECT hash, point
         FROM __TBL__
-        WHERE region = '' OR postcode = '' OR city = ''
+        WHERE city = ''
     ) o
-    LEFT JOIN LATERAL
-    reverse_geocode(o.wkb_geometry, false) g
-    ON true
+    LEFT JOIN
+    place p
+    ON ST_Intersects(p.the_geom, o.point)
+    LEFT JOIN
+    cousub c
+    ON ST_Intersects(c.the_geom, o.point)
+) b
+WHERE b.hash = __TBL__.hash
+;
+
+-- Fill in missing zip code using the same technique.
+UPDATE __TBL__
+SET
+postcode = z.zcta5ce
+FROM (
+    SELECT
+        o.hash,
+        p.name as place,
+        c.name as cousub
+    FROM (
+        SELECT hash, point
+        FROM __TBL__
+        WHERE postcode = ''
+    ) o
+    LEFT JOIN
+    zcta5 z
+    ON ST_Intersects(z.the_geom, o.point)
 ) b
 WHERE b.hash = __TBL__.hash
 ;
