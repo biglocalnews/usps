@@ -33,7 +33,18 @@ patch_load_script () {
     mv "$tmp" "$1"
 }
 
+# Select additional features to load.
+# We do this instead of running the Loader_Generate_Census_Script separately,
+# as described in the docs:
+# http://postgis.net/docs/postgis_installation.html#install_tiger_geocoder_extension
+#
+# Note that `addrfeat` also looks tempting, but it turns out to be redundant, and
+# there is a bug in getting it to load that we'd need to patch:
+# https://trac.osgeo.org/postgis/ticket/4655
+psql -c "UPDATE tiger.loader_lookuptables SET load = true WHERE lookup_name IN('tract', 'bg', 'tabblock20', 'zcta5_raw')" -tA
+
 # Generate & run the nation script if it hasn't been set up already.
+# Note: this is not a perfect test, should also check for county/zctas.
 has_state_tbl=$(psql -c "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname='tiger_data' AND tablename='state_all');" --csv | tail -1)
 if [[ "$has_state_tbl" == "f" ]]; then
     # Generate nation script
@@ -45,16 +56,6 @@ if [[ "$has_state_tbl" == "f" ]]; then
 else
     echo "Looks like national data has been set up already, so skipping that here"
 fi
-
-# Select additional features to load for states
-# We do this instead of running the Loader_Generate_Census_Script separately,
-# as described in the docs:
-# http://postgis.net/docs/postgis_installation.html#install_tiger_geocoder_extension
-#
-# Note that `addrfeat` also looks tempting, but it turns out to be redundant, and
-# there is a bug in getting it to load that we'd need to patch:
-# https://trac.osgeo.org/postgis/ticket/4655
-psql -c "UPDATE tiger.loader_lookuptables SET load = true WHERE lookup_name IN('tract', 'bg', 'tabblock20')" -tA
 
 # Generate the state script
 statestr=$(echo $states | sed 's/\([A-Z][A-Z]\)/'"'"'\1'"'"'/gi')
