@@ -23,6 +23,7 @@ CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING SPGIST (point);
 --  2. We join blockgroup info to enrich the downloads
 --  3. Tables are inherited from the main `address` table so that it's easier
 --     to modularize the database.
+BEGIN;
 DROP TABLE IF EXISTS __TBL__;
 CREATE TABLE __TBL__() INHERITS (address);
 
@@ -34,6 +35,10 @@ WITH oas AS (
     SELECT
         hash,
         point,
+        statefp,
+        countyfp,
+        tractce,
+        blkgrpce,
         ROW(
             to_number(substring((sa).house_num, '[0-9]+'), '99999999'),
             (sa).predir,
@@ -59,9 +64,9 @@ WITH oas AS (
                 number || ','
                 || street || ','
                 || unit || ','
-                || city || ','
+                || coalesce(NULLIF(city, ''), pname, cname, '') || ','
                 || region || ','
-                || coalesce(postcode, '')
+                || coalesce(NULLIF(postcode, ''), zname, '')
             ) AS sa
             FROM __STAGE__
         ) g
@@ -71,13 +76,11 @@ SELECT
     a.hash,
     pprint_addy(a.na) AS addr,
     a.point,
-    b.statefp,
-    b.countyfp,
-    b.tractce,
-    b.blkgrpce
+    a.statefp,
+    a.countyfp,
+    a.tractce,
+    a.blkgrpce
 FROM oas a
-LEFT JOIN bg b
-ON ST_Contains(b.the_geom, a.point)
 ;
 
 COMMIT;
