@@ -106,14 +106,14 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     # Fill in other missing columns using reverse geocoding.
     cat oa-fill-missing.sql | sed 's^MY_STATE^'"$state"'^g' | psql
 
-    # Ingest staging data to final table
-    cat ingest-oa.sql | sed 's^__TBL__^'"$tbl"'^g' | sed 's^__STAGE__^'"$staging"'^g' | psql
-
     # Throw out invalid addresses. Keep the hash in a log so that we can
     # investigate / fix them later.
     mkdir -p /addrdata/err
-    psql -c "SELECT hash FROM $tbl WHERE nullif(city, '') IS NULL" --csv > "/addrdata/err/invalid-addr-$tbl.csv"
-    psql -c "DELETE FROM $tbl WHERE nullif(city, '') IS NULL" -tA
+    psql -c "SELECT hash FROM $staging WHERE nullif(city, '') IS NULL OR point IS NULL OR nullif(hash, '') IS NULL" --csv > "/addrdata/err/invalid-addr-$tbl.csv"
+    psql -c "DELETE FROM $staging WHERE nullif(city, '') IS NULL OR point IS NULL OR nullif(hash, '') IS NULL" -tA
+
+    # Ingest staging data to final table
+    cat ingest-oa.sql | sed 's^__TBL__^'"$tbl"'^g' | sed 's^__STAGE__^'"$staging"'^g' | psql
 
     # Clean up staging table
     psql -c "DROP TABLE IF EXISTS $staging" -tA

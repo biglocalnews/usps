@@ -38,4 +38,5 @@ COMMIT;
 
 -- Create indexes based on the parent table's indexes.
 CREATE INDEX IF NOT EXISTS __TBL___fps_idx ON __TBL__ (statefp, countyfp);
+CREATE INDEX IF NOT EXISTS __TBL___tract_idx ON __TBL__ (tractce);
 CREATE INDEX IF NOT EXISTS __TBL___idx ON __TBL__ USING SPGIST (point);
