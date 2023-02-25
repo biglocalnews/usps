@@ -104,7 +104,7 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     cd /
 
     # Fill in other missing columns using reverse geocoding.
-    cat oa-fill-missing.sql | sed 's^__TBL__^'"$staging"'^g' | psql
+    cat oa-fill-missing.sql | sed 's^MY_STATE^'"$state"'^g' | psql
 
     # Ingest staging data to final table
     cat ingest-oa.sql | sed 's^__TBL__^'"$tbl"'^g' | sed 's^__STAGE__^'"$staging"'^g' | psql

@@ -1,12 +1,18 @@
 -- Create a table to store all the final addresses.
 CREATE TABLE IF NOT EXISTS address (
-    hash varchar(255) PRIMARY KEY not null,
-    addr varchar(1023) not null,
+    hash varchar PRIMARY KEY not null,
     point geometry not null,
     statefp varchar(2),
     countyfp varchar(3),
     tractce varchar(6),
-    blkgrpce varchar(1)
+    blkgrpce varchar(1),
+    unit varchar,
+    number varchar,
+    street varchar,
+    city varchar,
+    district varchar,
+    region varchar,
+    postcode varchar
 );
 
 -- Create indexes for fast querying.
@@ -25,66 +31,18 @@ CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING SPGIST (point);
 --     to modularize the database.
 BEGIN;
 DROP TABLE IF EXISTS __TBL__;
-CREATE TABLE __TBL__() INHERITS (address);
-
--- Try to stay true to the implementation of the pagc_normalizer:
--- https://github.com/postgis/postgis/blob/f6def67654c25d812446239036cee44812613748/extras/tiger_geocoder/pagc_normalize/pagc_normalize_address.sql#L34
--- Note that the example given in the TIGER documentation about how to improve
--- performance doesn't currently work!
-WITH oas AS (
-    SELECT
-        hash,
-        point,
-        statefp,
-        countyfp,
-        tractce,
-        blkgrpce,
-        ROW(
-            to_number(substring((sa).house_num, '[0-9]+'), '99999999'),
-            (sa).predir,
-            (sa).name,
-            (sa).suftype,
-            (sa).sufdir,
-            (sa).unit,
-            (sa).city,
-            (sa).state,
-            (sa).postcode,
-            true,
-            NULL,
-            (sa).house_num
-        )::norm_addy AS na
-    FROM (
-        SELECT
-            hash,
-            point,
-            standardize_address(
-                'tiger.pagc_lex',
-                'tiger.pagc_gaz',
-                'tiger.pagc_rules',
-                number || ','
-                || street || ','
-                || unit || ','
-                || coalesce(NULLIF(city, ''), pname, cname, '') || ','
-                || region || ','
-                || coalesce(NULLIF(postcode, ''), zname, '')
-            ) AS sa
-            FROM __STAGE__
-        ) g
-    )
-INSERT INTO __TBL__ (hash, addr, point, statefp, countyfp, tractce, blkgrpce)
-SELECT
-    a.hash,
-    pprint_addy(a.na) AS addr,
-    a.point,
-    a.statefp,
-    a.countyfp,
-    a.tractce,
-    a.blkgrpce
-FROM oas a
-;
+-- Note that we're not currently standardizing the addresses. This tends to
+-- mess up the address more than just presenting the OA address does. Since
+-- we've already filled in missing cities/zipcodes, the addresses should be
+-- in fairly good shape by this point anyway!
+-- (The address standardizer is also unbelievably slow!)
+ALTER TABLE __STAGE__ RENAME TO __TBL__;
+ALTER TABLE __TBL__ ALTER COLUMN hash SET NOT NULL;
+ALTER TABLE __TBL__ ALTER COLUMN point SET NOT NULL;
+ALTER TABLE __TBL__ INHERIT address;
 
 COMMIT;
 
 -- Create indexes based on the parent table's indexes.
-CREATE INDEX IF NOT EXISTS __TBL___fps_idx ON address (statefp, countyfp);
-CREATE INDEX IF NOT EXISTS __TBL___idx ON address USING SPGIST (point);
+CREATE INDEX IF NOT EXISTS __TBL___fps_idx ON __TBL__ (statefp, countyfp);
+CREATE INDEX IF NOT EXISTS __TBL___idx ON __TBL__ USING SPGIST (point);

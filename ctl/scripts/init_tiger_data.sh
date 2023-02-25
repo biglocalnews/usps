@@ -41,7 +41,8 @@ patch_load_script () {
 # Note that `addrfeat` also looks tempting, but it turns out to be redundant, and
 # there is a bug in getting it to load that we'd need to patch:
 # https://trac.osgeo.org/postgis/ticket/4655
-psql -c "UPDATE tiger.loader_lookuptables SET load = true WHERE lookup_name IN('tract', 'bg', 'tabblock20', 'zcta5_raw')" -tA
+psql -c "UPDATE tiger.loader_lookuptables SET load = true WHERE lookup_name NOT IN('addrfeat')" -tA
+psql -c "UPDATE tiger.loader_lookuptables SET load = false WHERE lookup_name NOT IN('addrfeat')" -tA
 
 # Generate & run the nation script if it hasn't been set up already.
 # Note: this is not a perfect test, should also check for county/zctas.
