@@ -21,14 +21,7 @@ CREATE INDEX IF NOT EXISTS addr_fps_idx ON address (statefp, countyfp);
 -- Add a spatial index on all the points.
 CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING SPGIST (point);
 
--- Ingest data from the staging table to the final table.
--- NOTE(s):
---  1. The pagc_normalize_address function has performance problems, so we are
---     using the workaround described here:
---     http://postgis.net/docs/manual-dev/Pagc_Normalize_Address.html
---  2. We join blockgroup info to enrich the downloads
---  3. Tables are inherited from the main `address` table so that it's easier
---     to modularize the database.
+-- Set up the final table.
 BEGIN;
 DROP TABLE IF EXISTS __TBL__;
 -- Note that we're not currently standardizing the addresses. This tends to

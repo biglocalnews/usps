@@ -1,5 +1,6 @@
 <script lang="ts">
   import 'mapbox-gl/dist/mapbox-gl.css';
+  import addressFormatter from '@fragaria/address-formatter';
   import mapboxgl from 'mapbox-gl';
   import extent from '@mapbox/geojson-extent';
   import {onMount, createEventDispatcher} from 'svelte';
@@ -57,7 +58,18 @@
           });
         }
         popup.setLngLat(popupData.geometry.coordinates);
-        popup.setHTML(`<div>${popupData.properties.addr}</div>`);
+        popup.setHTML(`<div>
+          ${addressFormatter.format({
+            houseNumber: popupData.properties.number,
+            road: popupData.properties.street,
+            city: popupData.properties.city,
+            postcode: popupData.properties.zip,
+            county: popupData.properties.county,
+            state: popupData.properties.state,
+            countryCode: 'US',
+          })}
+        </div>
+        `);
         map.flyTo({zoom: 13, center: popupData.geometry.coordinates});
       }
     }
@@ -89,7 +101,7 @@
             source: 'addresses',
             paint: {
               'circle-color': '#4d7c0f', // lime-700
-              'circle-radius': 2,
+              'circle-radius': 4,
             },
           })
           // Re-center map on bounds, not the address collection. The extent

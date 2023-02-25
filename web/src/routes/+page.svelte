@@ -27,15 +27,8 @@
   import Help from './Help.svelte';
   import * as api from '../lib/api.ts';
   import * as exportTools from '../lib/export.ts';
-  import type {
-    Address,
-    Shape,
-    SampleSizeUnit,
-    BuildingType,
-  } from '../lib/api.ts';
+  import type {Address, Shape, SampleSizeUnit} from '../lib/api.ts';
 
-  // All of the available building type codes.
-  const bldgTypes: BuildingType[] = ['R', 'B', 'X'];
   let ready = false;
   let sample: Address[] = [];
   let loading = false;
@@ -45,16 +38,9 @@
   let unitMenuOpen = false;
   let csvUrl = '';
   let exportName = '';
-  let typeCodesLabel = '';
   let helpOpen = false;
   let error: Error | null = null;
   let mapCoord: Address | null = null;
-  let typeFilters = {
-    R: false,
-    B: false,
-    X: false,
-  };
-  let typeMenuOpen = false;
 
   // Load GeoJSON representing the selected item.
   const fetchShape = async (e) => {
@@ -81,7 +67,6 @@
         selectedShape.properties,
         sampleSize,
         unit,
-        bldgTypes.filter((bt) => typeFilters[bt]),
       );
       sample = sampleRes.addresses;
       loading = false;
@@ -142,40 +127,6 @@
   const setReady = () => {
     ready = true;
   };
-
-  // Toggle selection of the given filter.
-  const toggleTypeFilter = (code: BuildingType) => {
-    typeFilters[code] = !typeFilters[code];
-  };
-
-  // Open the building type menu dropdown.
-  const openTypeMenu = () => {
-    typeMenuOpen = true;
-  };
-
-  // Get a human-readable summary for building type filter selection.
-  $: {
-    typeCodesLabel = '';
-    const codes = bldgTypes.filter((code) => typeFilters[code]);
-    if (codes.length === 0) {
-      typeCodesLabel = 'available';
-    } else {
-      for (let i = 0; i < codes.length; i++) {
-        if (i > 0) {
-          if (codes.length > 2) {
-            typeCodesLabel += ',';
-          }
-
-          if (i === codes.length - 1) {
-            typeCodesLabel += ' or';
-          }
-
-          typeCodesLabel += ' ';
-        }
-        typeCodesLabel += api.labelForBldgType(codes[i], codes.length > 1);
-      }
-    }
-  }
 </script>
 
 <style lang="postcss">
@@ -243,26 +194,6 @@
                 </Dropdown>
               </ButtonGroup>
             </NavLi>
-            <!--
-            <NavLi>
-              <Button
-                size="xs"
-                on:click={openTypeMenu}
-                outline
-                gradient
-                color="pinkToOrange"
-                >{typeCodesLabel}<ChevronDown class="ml-2" size="16" /></Button
-              >
-              <Dropdown bind:open={typeMenuOpen}>
-                {#each bldgTypes as bt}
-                  <DropdownItem on:click={() => toggleTypeFilter(bt)}>
-                    <Checkbox bind:checked={typeFilters[bt]}
-                      >{api.labelForBldgType(bt)}</Checkbox
-                    >
-                  </DropdownItem>
-                {/each}
-              </Dropdown>
-            </NavLi>-->
             <NavLi>addresses from</NavLi>
             <NavLi>
               <Badge id="bound" large>

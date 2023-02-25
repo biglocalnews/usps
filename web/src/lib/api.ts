@@ -31,7 +31,13 @@ const url = (path: string, search?: Record<string, any>) => {
  *
  * These are determined by the `/search` feature in the API.
  */
-export type ShapeKind = 'state' | 'county' | 'cousub' | 'place' | 'tract';
+export type ShapeKind =
+  | 'state'
+  | 'county'
+  | 'cousub'
+  | 'place'
+  | 'tract'
+  | 'zcta5';
 
 /**
  * Unit of sample size. Can be either a total count or percentage.
@@ -69,22 +75,18 @@ export type ApiSearchResponse = Readonly<{
 }>;
 
 /**
- * Building type codes.
- * X = Mixed Use
- * R = Residential
- * B = Business
- */
-export type BuildingType = 'X' | 'R' | 'B';
-
-/**
  * GeoJSON feature representing an address at a lat/lon.
  */
 export type Address = GeoJSON.Feature<
   GeoJSON.Point,
   {
-    addr: string;
-    type: BuildingType;
-    units: number;
+    unit: string;
+    number: string;
+    street: string;
+    city: string;
+    county: string;
+    state: string;
+    zip: string;
     statefp: number;
     countyfp: number;
     tractce: number;
@@ -135,7 +137,6 @@ export const sample = async (
   bounds: GeoJSON.MultiPolygon | ShapePointer,
   n: number,
   unit: SampleSizeUnit,
-  types?: BuildingType[],
 ): Promise<ApiSampleResponse> => {
   const [shapeBounds, customBounds] = bounds.hasOwnProperty('kind')
     ? [bounds, undefined]
@@ -148,28 +149,8 @@ export const sample = async (
       custom_bounds: customBounds,
       n,
       unit,
-      types: types?.length ? types : undefined,
     }),
     mode: 'cors',
   });
   return (await res.json()) as ApiSampleResponse;
-};
-
-/**
- * Human label for a building type code.
- */
-export const labelForBldgType = (
-  code: BuildingType,
-  short: boolean = false,
-) => {
-  switch (code) {
-    case 'R':
-      return short ? 'Res.' : 'Residential';
-    case 'B':
-      return short ? 'Bus.' : 'Business';
-    case 'X':
-      return short ? 'Mixed' : 'Mixed Use';
-    default:
-      return `Other: ${code}`;
-  }
 };

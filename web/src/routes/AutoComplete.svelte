@@ -36,6 +36,8 @@
         return 'purple';
       case 'tract':
         return 'yellow';
+      case 'zcta5':
+        return 'pink';
       default:
         return 'dark';
     }
@@ -53,6 +55,8 @@
         return 'Place';
       case 'tract':
         return 'Tract';
+      case 'zcta5':
+        return 'Zip Code';
       default:
         return kind;
     }
