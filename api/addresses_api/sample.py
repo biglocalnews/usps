@@ -95,22 +95,21 @@ def _get_bounds_subquery(params: SampleRequest) -> Tuple[str, dict]:
         }
 
 
-def _get_sample_clause(params: SampleRequest, qmax: int = 50000) -> Tuple[str, dict]:
+def _get_sample_clause(params: SampleRequest) -> Tuple[str, dict]:
     """Get a clause for random sampling based on request.
 
     Args:
         params - query input parameters
-        qmax - hard limit on result sets
 
     Returns:
         A tuple with the clause and the bound parameters it references.
     """
     match params.unit:
         case "pct":
-            return "WHERE random() < :n LIMIT :m", {"n": params.n / 100.0, "m": qmax}
+            return "WHERE r < :n", {"n": params.n / 100.0}
         case "total":
             # TODO: this is quite slow. Come up with a more efficient technique.
-            return "ORDER BY random() LIMIT :n", {"n": min(params.n, qmax)}
+            return "LIMIT :n", {"n": params.n}
         case _:
             raise ValueError(f"invalid sample size unit {params.unit}")
 
@@ -141,23 +140,21 @@ async def draw_address_sample(
         bounds AS (
             {bounds_q}
         ),
-        bounded AS (
-            SELECT
-                a.unit,
-                a.number,
-                a.street,
-                a.city,
-                a.district,
-                a.region,
-                a.postcode,
-                St_X(a.point) as lon,
-                St_Y(a.point) as lat,
-                a.statefp,
-                a.countyfp,
-                a.tractce,
-                a.blkgrpce
-            FROM address a, bounds
-            WHERE St_Contains(bounds.g, a.point)
+        coarse AS (
+            SELECT t.tractce
+            FROM tract t, bounds b
+            WHERE St_Intersects(b.g, t.the_geom)
+        ),
+        roughpass AS (
+            SELECT a.*, random() as r
+            FROM address a, coarse c
+            WHERE a.tractce IN (c.tractce)
+        ),
+        addrs AS (
+            SELECT a.*
+            FROM roughpass a, bounds b
+            WHERE ST_Contains(b.g, a.point)
+            ORDER BY r LIMIT :qmax
         )
         SELECT
             unit,
@@ -167,21 +164,22 @@ async def draw_address_sample(
             district,
             region,
             postcode,
-            lon,
-            lat,
+            St_X(point) as lon,
+            St_Y(point) as lat,
             statefp,
             countyfp,
             tractce,
             blkgrpce
-        FROM bounded
+        FROM addrs
         {sample_q}
     """
     )
 
+    qparams = dict(**bounds_args, **sample_args, qmax=50000)
     # Run compiled query
     res = await conn.execute(
         stmt,
-        dict(**bounds_args, **sample_args),
+        qparams,
     )
 
     sample = AddressSample(n=params.n, addresses=[], validation=[])
