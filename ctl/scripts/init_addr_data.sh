@@ -112,8 +112,8 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     # Throw out invalid addresses. Keep the hash in a log so that we can
     # investigate / fix them later.
     mkdir -p /addrdata/err
-    psql -c "SELECT hash FROM $tbl WHERE addr = ''" --csv > "/addrdata/err/invalid-addr-$tbl.csv"
-    psql -c "DELETE FROM $tbl WHERE addr = ''" -tA
+    psql -c "SELECT hash FROM $tbl WHERE nullif(city, '') IS NULL" --csv > "/addrdata/err/invalid-addr-$tbl.csv"
+    psql -c "DELETE FROM $tbl WHERE nullif(city, '') IS NULL" -tA
 
     # Clean up staging table
     psql -c "DROP TABLE IF EXISTS $staging" -tA
