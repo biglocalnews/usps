@@ -140,20 +140,14 @@ async def draw_address_sample(
         bounds AS (
             {bounds_q}
         ),
-        coarse AS (
-            SELECT t.tractce
-            FROM tract t, bounds b
-            WHERE St_Intersects(b.g, t.the_geom)
-        ),
-        roughpass AS (
+        rough AS (
             SELECT a.*, random() as r
-            FROM address a, coarse c
-            WHERE a.tractce IN (c.tractce)
+            FROM address a, bounds b
+            WHERE ST_Contains(b.g, a.point)
         ),
         addrs AS (
             SELECT a.*
-            FROM roughpass a, bounds b
-            WHERE ST_Contains(b.g, a.point)
+            FROM rough a
             ORDER BY r LIMIT :qmax
         )
         SELECT
