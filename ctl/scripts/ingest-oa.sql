@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS address (
 -- Create indexes for fast querying.
 -- FIPS indexes can narrow down the search space faster than spatial indexes.
 CREATE INDEX IF NOT EXISTS addr_fps_idx ON address (statefp, countyfp);
+-- Create tract index.
+CREATE INDEX IF NOT EXISTS addr_tract_idx ON address (tractce);
 -- Add a spatial index on all the points.
 CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING SPGIST (point);
 
