@@ -18,8 +18,6 @@ CREATE TABLE IF NOT EXISTS address (
 -- Create indexes for fast querying.
 -- FIPS indexes can narrow down the search space faster than spatial indexes.
 CREATE INDEX IF NOT EXISTS addr_fps_idx ON address (statefp, countyfp);
--- Create tract index.
-CREATE INDEX IF NOT EXISTS addr_tract_idx ON address (tractce);
 -- Add a spatial index on all the points.
 CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING SPGIST (point);
 
@@ -40,8 +38,7 @@ COMMIT;
 
 -- Create indexes based on the parent table's indexes.
 CREATE INDEX IF NOT EXISTS __TBL___fps_idx ON __TBL__ (statefp, countyfp);
-CREATE INDEX IF NOT EXISTS __TBL___tract_idx ON __TBL__ (tractce);
-CREATE INDEX IF NOT EXISTS __TBL___idx ON __TBL__ USING SPGIST (point);
+CREATE INDEX IF NOT EXISTS __TBL___idx ON __TBL__ USING GIST (point);
 
 -- Sort the physical rows of the table to make the index more effective.
 CLUSTER __TBL__ USING __TBL___idx;
