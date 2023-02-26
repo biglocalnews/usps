@@ -42,3 +42,6 @@ COMMIT;
 CREATE INDEX IF NOT EXISTS __TBL___fps_idx ON __TBL__ (statefp, countyfp);
 CREATE INDEX IF NOT EXISTS __TBL___tract_idx ON __TBL__ (tractce);
 CREATE INDEX IF NOT EXISTS __TBL___idx ON __TBL__ USING SPGIST (point);
+
+-- Sort the physical rows of the table to make the index more effective.
+CLUSTER __TBL__ USING __TBL___idx;

@@ -115,8 +115,9 @@ for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     # Ingest staging data to final table
     cat ingest-oa.sql | sed 's^__TBL__^'"$tbl"'^g' | sed 's^__STAGE__^'"$staging"'^g' | psql
 
-    # Clean up staging table
+    # Clean up staging table / data
     psql -c "DROP TABLE IF EXISTS $staging" -tA
+    rm -r "/addrdata/us/$state"
 done
 
 echo 'done'
