@@ -89,6 +89,9 @@ CREATE TABLE oa_MY_STATE_staging_tmp2 AS (
 )
 ;
 
+-- Clean up first table
+DROP TABLE oa_MY_STATE_staging_tmp1;
+
 -- Fill in postcode from ZCTA table.
 CREATE TABLE oa_MY_STATE_staging_tmp3 AS (
     SELECT
@@ -129,6 +132,9 @@ CREATE TABLE oa_MY_STATE_staging_tmp3 AS (
 )
 ;
 
+-- Clean up second table
+DROP TABLE oa_MY_STATE_staging_tmp2;
+
 -- Deduplicate any points that fell in multiple zips.
 -- Doesn't really matter which one we choose because they each have an equal
 -- chance of being correct, I'd assume.
@@ -137,6 +143,9 @@ CREATE TABLE oa_MY_STATE_staging_tmp4 AS (
     FROM oa_MY_STATE_staging_tmp3
 )
 ;
+
+-- Clean up third table
+DROP TABLE oa_MY_STATE_staging_tmp3;
 
 -- Finally, join in blockgroup information.
 CREATE TABLE oa_MY_STATE_staging_tmp5 AS (
@@ -153,6 +162,9 @@ CREATE TABLE oa_MY_STATE_staging_tmp5 AS (
 )
 ;
 
+-- Clean up fourth table
+DROP TABLE oa_MY_STATE_staging_tmp4;
+
 -- Now tidy everything up and leave the original staging table.
 DROP TABLE oa_MY_STATE_staging;
 
@@ -162,10 +174,6 @@ CREATE TABLE oa_MY_STATE_staging AS (
 )
 ;
 
-DROP TABLE oa_MY_STATE_staging_tmp1;
-DROP TABLE oa_MY_STATE_staging_tmp2;
-DROP TABLE oa_MY_STATE_staging_tmp3;
-DROP TABLE oa_MY_STATE_staging_tmp4;
 DROP TABLE oa_MY_STATE_staging_tmp5;
 
 COMMIT;
