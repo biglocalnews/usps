@@ -38,7 +38,7 @@ COMMIT;
 
 -- Create indexes based on the parent table's indexes.
 CREATE INDEX IF NOT EXISTS __TBL___fps_idx ON __TBL__ (statefp, countyfp);
-CREATE INDEX IF NOT EXISTS __TBL___idx ON __TBL__ USING GIST (point);
+CREATE INDEX IF NOT EXISTS __TBL___gist_idx ON __TBL__ USING GIST (point);
 
 -- Sort the physical rows of the table to make the index more effective.
-CLUSTER __TBL__ USING __TBL___idx;
+CLUSTER __TBL__ USING __TBL___gist_idx;
