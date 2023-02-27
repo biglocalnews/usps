@@ -86,13 +86,14 @@ def _get_bounds_subquery(params: SampleRequest) -> Tuple[str, dict]:
     """
     if params.shape_bounds:
         tbl = get_shape_table(params.shape_bounds.kind)
-        return f"SELECT the_geom g FROM {tbl} WHERE gid = :gid", {
+        return f"SELECT ST_SubDivide(the_geom) g FROM {tbl} WHERE gid = :gid", {
             "gid": params.shape_bounds.gid
         }
     else:
-        return "SELECT St_GeomFromGeoJson(x) g FROM (values(:bounds)) s(x)", {
-            "bounds": dumps(params.custom_bounds)
-        }
+        return (
+            "SELECT ST_SubDivide(St_GeomFromGeoJson(x)) g FROM (values(:bounds)) s(x)",
+            {"bounds": dumps(params.custom_bounds)},
+        )
 
 
 def _get_sample_clause(params: SampleRequest) -> Tuple[str, dict]:
