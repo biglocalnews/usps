@@ -96,7 +96,7 @@ def _get_bounds_subquery(params: SampleRequest) -> Tuple[str, dict]:
         )
 
 
-def _get_sample_clause(params: SampleRequest) -> Tuple[str, dict]:
+def _get_sample_clause(params: SampleRequest, qmax: int = 50000) -> Tuple[str, dict]:
     """Get a clause for random sampling based on request.
 
     Args:
@@ -107,10 +107,10 @@ def _get_sample_clause(params: SampleRequest) -> Tuple[str, dict]:
     """
     match params.unit:
         case "pct":
-            return "WHERE r < :n", {"n": params.n / 100.0}
+            return "WHERE r < :n", {"n": params.n / 100.0, "qmax": qmax}
         case "total":
             # TODO: this is quite slow. Come up with a more efficient technique.
-            return "LIMIT :n", {"n": params.n}
+            return "", {"qmax": min(qmax, params.n)}
         case _:
             raise ValueError(f"invalid sample size unit {params.unit}")
 
@@ -135,82 +135,93 @@ async def draw_address_sample(
     # the most part queries should be run with geometries already in the DB.
     bounds_q, bounds_args = _get_bounds_subquery(params)
     sample_q, sample_args = _get_sample_clause(params)
-    stmt = text(
-        f"""
-        WITH
-        bounds AS (
-            {bounds_q}
-        ),
-        rough AS (
-            SELECT a.*, random() as r
-            FROM address a, bounds b
-            WHERE ST_Contains(b.g, a.point)
-        ),
-        addrs AS (
-            SELECT a.*
-            FROM rough a
-            ORDER BY r LIMIT :qmax
+    async with conn.begin():
+        await conn.execute(
+            text(
+                f"""
+            CREATE TEMPORARY TABLE coarse ON COMMIT DROP AS
+            SELECT tract_id
+            FROM tract t, ({bounds_q}) b
+            WHERE t.the_geom && b.g
+        """
+            ),
+            bounds_args,
         )
-        SELECT
-            unit,
-            number,
-            street,
-            city,
-            district,
-            region,
-            postcode,
-            St_X(point) as lon,
-            St_Y(point) as lat,
-            statefp,
-            countyfp,
-            tract_id,
-            blkgrpce
-        FROM addrs
-        {sample_q}
-    """
-    )
 
-    qparams = dict(**bounds_args, **sample_args, qmax=50000)
-    # Run compiled query
-    res = await conn.execute(
-        stmt,
-        qparams,
-    )
-
-    sample = AddressSample(n=params.n, addresses=[], validation=[])
-    for line in res:
-        (
-            unit,
-            number,
-            street,
-            city,
-            district,
-            region,
-            postcode,
-            lon,
-            lat,
-            statefp,
-            countyfp,
-            tract_id,
-            blkgrpce,
-        ) = line
-        ft = Feature(
-            geometry=Point([lon, lat]),
-            properties={
-                "unit": unit,
-                "number": number,
-                "street": street,
-                "city": city,
-                "county": district,
-                "state": region,
-                "zip": postcode,
-                "statefp": statefp,
-                "countyfp": countyfp,
-                "tractce": tract_id[-6:],
-                "blkgrpce": blkgrpce,
-            },
+        stmt = text(
+            f"""
+            WITH
+            bounds AS ({bounds_q}),
+            rough AS (
+                SELECT a.*
+                FROM address a
+                WHERE a.tract_id IN (SELECT tract_id FROM coarse)
+            ),
+            addrset AS (
+                SELECT a.*, random() as r
+                FROM rough a,
+                --(SELECT ST_SubDivide(g) g FROM bounds) b
+                bounds b
+                WHERE ST_Contains(b.g, a.point)
+            )
+            SELECT
+                a.unit,
+                a.number,
+                a.street,
+                a.city,
+                a.district,
+                a.region,
+                a.postcode,
+                St_X(a.point) as lon,
+                St_Y(a.point) as lat,
+                a.tract_id,
+                a.blkgrpce
+            FROM addrset a
+            {sample_q}
+            ORDER BY r
+                LIMIT :qmax
+        """
         )
-        sample.addresses.append(ft)
+
+        qparams = dict(**bounds_args, **sample_args)
+        # Run compiled query
+        res = await conn.execute(
+            stmt,
+            qparams,
+        )
+
+        sample = AddressSample(n=params.n, addresses=[], validation=[])
+        for line in res:
+            (
+                unit,
+                number,
+                street,
+                city,
+                district,
+                region,
+                postcode,
+                lon,
+                lat,
+                tract_id,
+                blkgrpce,
+            ) = line
+            ft = Feature(
+                geometry=Point([lon, lat]),
+                properties={
+                    "unit": unit,
+                    "number": number,
+                    "street": street,
+                    "city": city,
+                    "county": district,
+                    "state": region,
+                    "zip": postcode,
+                    "statefp": tract_id[:2],
+                    "countyfp": tract_id[2:5],
+                    "tractce": tract_id[5:],
+                    "blkgrpce": blkgrpce,
+                },
+            )
+            sample.addresses.append(ft)
 
     if len(sample.addresses) != params.n:
         sample.validation.append(
