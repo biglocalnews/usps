@@ -32,7 +32,7 @@
   let ready = false;
   let sample: Address[] = [];
   let loading = false;
-  let sampleSize = 20;
+  let sampleSize = 200;
   let selectedShape: Shape | null = null;
   let unit: SampleSizeUnit = 'total';
   let unitMenuOpen = false;
@@ -232,7 +232,7 @@
         transition:fly={{y: 200, duration: 200}}
       >
         <header class="py-8">
-          <Heading>US Places Service</Heading>
+          <Heading>US Place Sampler</Heading>
         </header>
         <div>
           <Search on:select={fetchShape} />

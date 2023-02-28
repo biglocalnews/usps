@@ -86,12 +86,12 @@ def _get_bounds_subquery(params: SampleRequest) -> Tuple[str, dict]:
     """
     if params.shape_bounds:
         tbl = get_shape_table(params.shape_bounds.kind)
-        return f"SELECT ST_SubDivide(the_geom) g FROM {tbl} WHERE gid = :gid", {
+        return f"SELECT the_geom g FROM {tbl} WHERE gid = :gid", {
             "gid": params.shape_bounds.gid
         }
     else:
         return (
-            "SELECT ST_SubDivide(St_GeomFromGeoJson(x)) g FROM (values(:bounds)) s(x)",
+            "SELECT St_GeomFromGeoJson(x) g FROM (values(:bounds)) s(x)",
             {"bounds": dumps(params.custom_bounds)},
         )
 
@@ -159,8 +159,8 @@ async def draw_address_sample(
             ),
             addrset AS (
                 SELECT a.*, random() as r
-                FROM rough a,
-                --(SELECT ST_SubDivide(g) g FROM bounds) b
+                FROM
+                rough a,
                 bounds b
                 WHERE ST_Contains(b.g, a.point)
             )

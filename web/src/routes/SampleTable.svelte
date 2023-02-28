@@ -58,15 +58,17 @@
           {#each rows as row}
             <TableBodyRow on:click={() => hover(row)}>
               <TableBodyCell
-                >{addressFormatter.format({
-                  houseNumber: row.properties.number,
-                  road: row.properties.street,
-                  city: row.properties.city,
-                  postcode: row.properties.zip,
-                  county: row.properties.county,
-                  state: row.properties.state,
-                  countryCode: 'US',
-                })}</TableBodyCell
+                >{addressFormatter
+                  .format({
+                    houseNumber: row.properties.number,
+                    road: row.properties.street,
+                    city: row.properties.city,
+                    postcode: row.properties.zip,
+                    county: row.properties.county,
+                    state: row.properties.state,
+                    countryCode: 'US',
+                  })
+                  .toUpperCase()}</TableBodyCell
               >
               <TableBodyCell
                 >{formatcoords(
