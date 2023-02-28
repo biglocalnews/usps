@@ -163,7 +163,7 @@ async def draw_address_sample(
             St_Y(point) as lat,
             statefp,
             countyfp,
-            tractce,
+            tract_id,
             blkgrpce
         FROM addrs
         {sample_q}
@@ -191,7 +191,7 @@ async def draw_address_sample(
             lat,
             statefp,
             countyfp,
-            tractce,
+            tract_id,
             blkgrpce,
         ) = line
         ft = Feature(
@@ -206,7 +206,7 @@ async def draw_address_sample(
                 "zip": postcode,
                 "statefp": statefp,
                 "countyfp": countyfp,
-                "tractce": tractce,
+                "tractce": tract_id[-6:],
                 "blkgrpce": blkgrpce,
             },
         )
