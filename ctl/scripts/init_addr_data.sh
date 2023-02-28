@@ -123,6 +123,9 @@ declare -A statefipslookup=(
 # Create address standardizer extension if it's not installed already.
 psql -c "CREATE EXTENSION IF NOT EXISTS address_standardizer" -tA
 
+# Create sampling function
+cat sample-fn.sql | psql
+
 # Ingest all the geojson files into the DB.
 for state in $(echo "$states" | awk '{ print tolower($0) }' | tr "," "\n"); do
     cd /addrdata
