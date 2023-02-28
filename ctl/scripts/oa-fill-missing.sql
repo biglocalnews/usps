@@ -153,7 +153,7 @@ CREATE TABLE oa_MY_STATE_staging_tmp5 AS (
         t.*,
         g.statefp,
         g.countyfp,
-        g.tractce,
+        (g.statefp || g.countyfp || g.tractce)::varchar(11) as tract_id,
         g.blkgrpce
     FROM oa_MY_STATE_staging_tmp4 t
     LEFT JOIN

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS address (
     point geometry not null,
     statefp varchar(2),
     countyfp varchar(3),
-    tractce varchar(6),
+    tract_id varchar(11),
     blkgrpce varchar(1),
     unit varchar,
     number varchar,
@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS address (
 
 -- Create indexes for fast querying.
 -- FIPS indexes can narrow down the search space faster than spatial indexes.
-CREATE INDEX IF NOT EXISTS addr_fps_idx ON address (statefp, countyfp);
+CREATE INDEX IF NOT EXISTS addr_tractid_idx ON address (tract_id);
 -- Add a spatial index on all the points.
-CREATE INDEX IF NOT EXISTS addr_pt_idx ON address USING SPGIST (point);
+CREATE INDEX IF NOT EXISTS addr_gist_idx ON address USING GIST (point);
 
 -- Set up the final table.
 BEGIN;
@@ -32,12 +32,13 @@ DROP TABLE IF EXISTS __TBL__;
 ALTER TABLE __STAGE__ RENAME TO __TBL__;
 ALTER TABLE __TBL__ ALTER COLUMN hash SET NOT NULL;
 ALTER TABLE __TBL__ ALTER COLUMN point SET NOT NULL;
+ALTER TABLE __TBL__ ALTER COLUMN tract_id SET NOT NULL;
 ALTER TABLE __TBL__ INHERIT address;
 
 COMMIT;
 
 -- Create indexes based on the parent table's indexes.
-CREATE INDEX IF NOT EXISTS __TBL___fps_idx ON __TBL__ (statefp, countyfp);
+CREATE INDEX IF NOT EXISTS __TBL___tractid_idx ON __TBL__ (tract_id);
 CREATE INDEX IF NOT EXISTS __TBL___gist_idx ON __TBL__ USING GIST (point);
 
 -- Sort the physical rows of the table to make the index more effective.
