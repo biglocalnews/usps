@@ -3,7 +3,7 @@
 This project runs a webapp to allow fast sampling of US addresses
 within arbitrary (but usually CENSUS-based) geometries.
 
-## Development
+## Usage / development
 
 There are four parts of the stack:
 
@@ -11,6 +11,16 @@ There are four parts of the stack:
 2.  A "work box" VM that has all the CLI tools for working with the DB
 3.  The Python API
 4.  The UI
+
+The full stack can be run with:
+
+```zsh
+docker compose up --build
+```
+
+The app will be served at `http://localhost/`.
+You will need to ingest some TIGER and OpenAddresses data to use it.
+(See below!)
 
 ### PostGIS
 
@@ -22,10 +32,12 @@ You can run a database locally with docker-compose.
 
 ### Work Box `ctl`
 
-You can run both the database and the work box with the command:
+See the scripts in `./ctl/` for more info.
+
+For development, it's useful to just run the `ctl` and `db` VMs in docker.
 
 ```zsh
-docker-compose up db ctl --build
+docker compose up db ctl --build
 ```
 
 #### Ingesting data (only need to do once)
@@ -70,3 +82,4 @@ Tips:
 3.  The `postgresql.conf` should be tuned for your hardware
 4.  The `services.db.shm_size` might need to be increased for large volumes of data
 5.  Use production-ready secrets as needed
+6.  Configure the volumes in docker compose to be persistent on a disk (preferablly SSD for Postgres data!)

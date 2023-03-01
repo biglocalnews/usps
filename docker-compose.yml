@@ -1,6 +1,23 @@
 version: "3.9"
 
 services:
+  # Load balancer
+  lb:
+    platform: linux/amd64
+    image: nginx:1.23.3
+    # Reload to pick up new certificates
+    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - public
+    depends_on:
+      - api
+      - web
+
   # UI / Static rendering
   web:
     platform: linux/amd64
