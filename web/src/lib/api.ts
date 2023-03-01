@@ -134,13 +134,13 @@ export const search = async (needle: string): Promise<ShapePointer[]> => {
  * Draw a sample from the API.
  */
 export const sample = async (
-  bounds: GeoJSON.MultiPolygon | ShapePointer,
+  bounds: GeoJSON.Feature<GeoJSON.MultiPolygon, ShapePointer | {}>,
   n: number,
   unit: SampleSizeUnit,
 ): Promise<ApiSampleResponse> => {
-  const [shapeBounds, customBounds] = bounds.hasOwnProperty('kind')
-    ? [bounds, undefined]
-    : [undefined, bounds];
+  const [shapeBounds, customBounds] = bounds.properties.hasOwnProperty('kind')
+    ? [bounds.properties, undefined]
+    : [undefined, bounds.geometry];
   const res = await fetch(url('/sample'), {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},

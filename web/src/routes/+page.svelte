@@ -1,7 +1,9 @@
 <script lang="ts">
   import {fly, fade} from 'svelte/transition';
   import {
+    Fileupload,
     Heading,
+    Helper,
     Dropdown,
     DropdownItem,
     Checkbox,
@@ -19,6 +21,8 @@
     Modal,
     SpeedDial,
     SpeedDialButton,
+    Tabs,
+    TabItem,
   } from 'flowbite-svelte';
   import {ChevronDown, Sparkles, QuestionMarkCircle} from 'svelte-heros-v2';
   import Search from './Search.svelte';
@@ -29,6 +33,7 @@
   import * as exportTools from '../lib/export.ts';
   import type {Address, Shape, SampleSizeUnit} from '../lib/api.ts';
 
+  let searchMode: 'search' | 'upload' = 'search';
   let ready = false;
   let sample: Address[] = [];
   let loading = false;
@@ -41,6 +46,7 @@
   let helpOpen = false;
   let error: Error | null = null;
   let mapCoord: Address | null = null;
+  let uploadFiles: FileList[] = [];
 
   // Load GeoJSON representing the selected item.
   const fetchShape = async (e) => {
@@ -63,11 +69,7 @@
     mapCoord = null;
     sample = [];
     try {
-      const sampleRes = await api.sample(
-        selectedShape.properties,
-        sampleSize,
-        unit,
-      );
+      const sampleRes = await api.sample(selectedShape, sampleSize, unit);
       sample = sampleRes.addresses;
       loading = false;
     } catch (e) {
@@ -127,6 +129,35 @@
   const setReady = () => {
     ready = true;
   };
+
+  // Upload a custom geometry
+  const uploadShape = async () => {
+    if (uploadFiles.length === 0) {
+      return;
+    }
+
+    const t = await uploadFiles[0].text();
+    try {
+      const json = JSON.parse(t);
+      if (json.type !== 'Feature') {
+        throw new Error('Only GeoJSON features are supported at this time.');
+      }
+      if (!json.properties.name) {
+        json.properties.name = uploadFiles[0].name;
+      }
+      selectedShape = json;
+    } catch (e) {
+      error = e;
+    }
+  };
+
+  $: {
+    if (uploadFiles.length > 0) {
+      uploadShape();
+    } else {
+      selectedShape = null;
+    }
+  }
 </script>
 
 <style lang="postcss">
@@ -235,7 +266,31 @@
           <Heading>US Place Sampler</Heading>
         </header>
         <div>
-          <Search on:select={fetchShape} />
+          <Tabs
+            contentClass="p-4 bg-gray-50 rounded-lg dark:bg-gray-800 -mt-2"
+            inactiveClasses="p-4 text-gray-500 rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300 bg-white"
+          >
+            <TabItem
+              open={searchMode === 'search'}
+              on:click={(searchMode = 'search')}
+              title="Search"
+            >
+              <Search on:select={fetchShape} />
+            </TabItem>
+            <TabItem
+              open={searchMode === 'upload'}
+              on:click={(searchMode = 'upload')}
+              title="Upload"
+            >
+              <Fileupload bind:files={uploadFiles} />
+              <Helper
+                class="text-s font-normal text-sky-600 dark:text-sky-300 pt-1 bg-white/50 rounded"
+              >
+                Upload a file containing a GeoJSON Feature from your computer to
+                use as the sampling area.
+              </Helper>
+            </TabItem>
+          </Tabs>
         </div>
       </div>
     {/if}
