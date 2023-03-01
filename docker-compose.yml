@@ -24,8 +24,8 @@ services:
     build:
       context: web
       labels:
-        - "edu.stanford.bln.addy.service=web"
-    image: addyweb:latest
+        - "edu.stanford.bln.usps.service=web"
+    image: uspsweb:latest
     restart: always
     networks:
       - public
@@ -46,8 +46,8 @@ services:
     build:
       context: api
       labels:
-        - "edu.stanford.bln.addy.service=api"
-    image: addyapi:latest
+        - "edu.stanford.bln.usps.service=api"
+    image: uspsapi:latest
     restart: always
     networks:
       - private
@@ -78,8 +78,8 @@ services:
     build:
       context: ctl
       labels:
-        - "edu.stanford.bln.addy.service=ctl"
-    image: addyctl:latest
+        - "edu.stanford.bln.usps.service=ctl"
+    image: uspsctl:latest
     restart: always
     networks:
       - private
