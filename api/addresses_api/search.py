@@ -14,7 +14,7 @@ class SearchResult:
 
 def _compile_query(q: str) -> str:
     """Compile a postgres search query from a string."""
-    return "&".join(f"{s}:*" for s in q.lower().split())
+    return "%" + ("%".join(q.split())) + "%"
 
 
 async def search_tiger(
@@ -35,9 +35,9 @@ async def search_tiger(
     # nested geometries like tracts and blockgroups.
     stmt = text(
         f"""
-        SELECT gid, kind, name, secondary, ts_rank_cd(tsv, q, 2) as rank
-        FROM haystack, to_tsquery(:q) q
-        WHERE {kind_clause} q @@ tsv
+        SELECT gid, kind, name, secondary, similarity(:orig, name) as rank
+        FROM haystack
+        WHERE {kind_clause} search ILIKE :q
         ORDER BY rank DESC
         LIMIT :limit
     """
@@ -45,6 +45,7 @@ async def search_tiger(
 
     # Assemble query parameters
     params = {
+        "orig": q,
         "q": _compile_query(q),
         "limit": limit,
     }

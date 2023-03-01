@@ -6,7 +6,7 @@ from sqlalchemy.sql import text
 def get_shape_table(kind: str) -> str:
     """Get the table where a shape can be found."""
     tbl = kind.lower()
-    if tbl not in {"state", "county", "cousub", "place", "tract", "bg"}:
+    if tbl not in {"state", "county", "cousub", "place", "tract", "bg", "zcta5"}:
         raise ValueError(f"invalid kind {kind}")
     return f"tiger.{tbl}"
 
