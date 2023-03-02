@@ -136,8 +136,7 @@
       placeholder="Where would you like to sample?"
     />
   </AutoComplete>
-  <Helper
-    class="text-s font-normal text-sky-600 dark:text-sky-300 pt-1 bg-white/50 rounded"
+  <Helper class="text-s font-normal text-sky-600 dark:text-sky-300 pt-4 rounded"
     >Search for census geometries like counties, places, and tracts. Try:
     "Glover, Vermont."</Helper
   >

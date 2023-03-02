@@ -271,7 +271,7 @@
         <div>
           {#if showUpload}
             <Tabs
-              contentClass="p-4 bg-gray-50 rounded-lg dark:bg-gray-800 -mt-2"
+              contentClass="p-4 bg-gray-50/75 rounded-lg dark:bg-gray-800/75"
               inactiveClasses="p-4 text-gray-500 rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300 bg-white"
             >
               <TabItem
@@ -288,7 +288,7 @@
               >
                 <Fileupload bind:files={uploadFiles} />
                 <Helper
-                  class="text-s font-normal text-sky-600 dark:text-sky-300 pt-1 bg-white/50 rounded"
+                  class="text-s font-normal text-sky-600 dark:text-sky-300 rounded pt-4"
                 >
                   Upload a file containing a GeoJSON Feature from your computer
                   to use as the sampling area.
