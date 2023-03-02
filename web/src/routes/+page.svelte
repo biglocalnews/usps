@@ -95,6 +95,7 @@
     sample = [];
     selectedShape = null;
     searchMode = 'search';
+    uploadFiles = [];
   };
 
   // Set sample size unit to new value.
