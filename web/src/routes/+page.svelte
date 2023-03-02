@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {browser} from '$app/environment';
   import {fly, fade} from 'svelte/transition';
   import {
     Fileupload,
@@ -33,6 +34,7 @@
   import * as exportTools from '../lib/export.ts';
   import type {Address, Shape, SampleSizeUnit} from '../lib/api.ts';
 
+  const showUpload = browser && document.location.search === '?new';
   let searchMode: 'search' | 'upload' = 'search';
   let ready = false;
   let sample: Address[] = [];
@@ -92,6 +94,7 @@
     mapCoord = null;
     sample = [];
     selectedShape = null;
+    searchMode = 'search';
   };
 
   // Set sample size unit to new value.
@@ -266,31 +269,35 @@
           <Heading>US Place Sampler</Heading>
         </header>
         <div>
-          <Tabs
-            contentClass="p-4 bg-gray-50 rounded-lg dark:bg-gray-800 -mt-2"
-            inactiveClasses="p-4 text-gray-500 rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300 bg-white"
-          >
-            <TabItem
-              open={searchMode === 'search'}
-              on:click={(searchMode = 'search')}
-              title="Search"
+          {#if showUpload}
+            <Tabs
+              contentClass="p-4 bg-gray-50 rounded-lg dark:bg-gray-800 -mt-2"
+              inactiveClasses="p-4 text-gray-500 rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300 bg-white"
             >
-              <Search on:select={fetchShape} />
-            </TabItem>
-            <TabItem
-              open={searchMode === 'upload'}
-              on:click={(searchMode = 'upload')}
-              title="Upload"
-            >
-              <Fileupload bind:files={uploadFiles} />
-              <Helper
-                class="text-s font-normal text-sky-600 dark:text-sky-300 pt-1 bg-white/50 rounded"
+              <TabItem
+                open={searchMode === 'search'}
+                on:click={(searchMode = 'search')}
+                title="Search"
               >
-                Upload a file containing a GeoJSON Feature from your computer to
-                use as the sampling area.
-              </Helper>
-            </TabItem>
-          </Tabs>
+                <Search on:select={fetchShape} />
+              </TabItem>
+              <TabItem
+                open={searchMode === 'upload'}
+                on:click={(searchMode = 'upload')}
+                title="Upload"
+              >
+                <Fileupload bind:files={uploadFiles} />
+                <Helper
+                  class="text-s font-normal text-sky-600 dark:text-sky-300 pt-1 bg-white/50 rounded"
+                >
+                  Upload a file containing a GeoJSON Feature from your computer
+                  to use as the sampling area.
+                </Helper>
+              </TabItem>
+            </Tabs>
+          {:else}
+            <Search on:select={fetchShape} />
+          {/if}
         </div>
       </div>
     {/if}

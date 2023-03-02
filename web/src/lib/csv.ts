@@ -1,4 +1,5 @@
 import type {Address} from './api';
+import {formatAddr} from './addr';
 
 /**
  * Add quotes to a CSV cell.
@@ -17,15 +18,16 @@ const quo = (s: string | number | boolean) => {
  */
 export const addressListToCsv = (addresses: Address[]) => {
   let csv =
-    'unit,number,street,city,county,state,zip,longitude,latitude,statefp,countyfp,tractce,blkgrpce';
+    'address_full,number,street,city,state,zip,longitude,latitude,statefp,countyfp,tractce,blkgrpce';
   for (let addr of addresses) {
     csv += '\n';
     const row = [
-      addr.properties.unit,
+      formatAddr(addr).toUpperCase(),
+      // addr.properties.unit,
       addr.properties.number,
       addr.properties.street.toUpperCase(),
       addr.properties.city.toUpperCase(),
-      addr.properties.county.toUpperCase(),
+      // addr.properties.county.toUpperCase(),
       addr.properties.state.toUpperCase(),
       addr.properties.zip,
       addr.geometry.coordinates[0],

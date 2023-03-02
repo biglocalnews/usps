@@ -8,13 +8,7 @@
     geographic region.
   </P>
   <P class="mb-3">
-    Currently, we allow you to select states, towns, and counties as defined by
-    the US Census.
+    We allow you to sample within geographies defined by the US Census such as
+    counties, places, tracts, and zip code tabulation areas (zcta5).
   </P>
-  <P class="mb-3">
-    In the future we will also support other Census geographics such as tracts
-    and blockgroups, and also arbitrary custom geographies (via upload or
-    on-the-fly drawing).
-  </P>
-  <P class="mb-3">TKTK: feedback/contact info</P>
 </div>

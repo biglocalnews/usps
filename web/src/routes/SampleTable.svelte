@@ -13,8 +13,8 @@
     TabItem,
   } from 'flowbite-svelte';
   import formatcoords from 'formatcoords';
-  import addressFormatter from '@fragaria/address-formatter';
   import type {Address, Shape} from '../lib/api.ts';
+  import {formatAddr} from '../lib/addr.ts';
 
   const dispatch = createEventDispatcher();
 
@@ -57,19 +57,7 @@
         <TableBody>
           {#each rows as row}
             <TableBodyRow on:click={() => hover(row)}>
-              <TableBodyCell
-                >{addressFormatter
-                  .format({
-                    houseNumber: row.properties.number,
-                    road: row.properties.street,
-                    city: row.properties.city,
-                    postcode: row.properties.zip,
-                    county: row.properties.county,
-                    state: row.properties.state,
-                    countryCode: 'US',
-                  })
-                  .toUpperCase()}</TableBodyCell
-              >
+              <TableBodyCell>{formatAddr(row).toUpperCase()}</TableBodyCell>
               <TableBodyCell
                 >{formatcoords(
                   row.geometry.coordinates,

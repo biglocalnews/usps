@@ -138,7 +138,7 @@
   </AutoComplete>
   <Helper
     class="text-s font-normal text-sky-600 dark:text-sky-300 pt-1 bg-white/50 rounded"
-    >You can search for cities, towns, counties, or states. Try: "Glover,
-    Vermont."</Helper
+    >Search for census geometries like counties, places, and tracts. Try:
+    "Glover, Vermont."</Helper
   >
 </div>
