@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount, createEventDispatcher} from 'svelte';
   import {debounce} from 'lodash-es';
-  import {Search, Helper} from 'flowbite-svelte';
+  import {Search} from 'flowbite-svelte';
   import AutoComplete from './AutoComplete.svelte';
   import * as api from '../lib/api.ts';
 
@@ -136,8 +136,4 @@
       placeholder="Where would you like to sample?"
     />
   </AutoComplete>
-  <Helper class="text-s font-normal text-sky-600 dark:text-sky-300 pt-4 rounded"
-    >Search for census geometries like counties, places, and tracts. Try:
-    "Glover, Vermont."</Helper
-  >
 </div>

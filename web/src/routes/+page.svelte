@@ -30,6 +30,8 @@
   import AddrMap from './AddrMap.svelte';
   import SampleTable from './SampleTable.svelte';
   import Help from './Help.svelte';
+  import Upload from './Upload.svelte';
+  import {getFuzzyFeatureProp} from '$lib/getFeatureName';
   import * as api from '../lib/api.ts';
   import * as exportTools from '../lib/export.ts';
   import type {Address, Shape, SampleSizeUnit} from '../lib/api.ts';
@@ -48,7 +50,6 @@
   let helpOpen = false;
   let error: Error | null = null;
   let mapCoord: Address | null = null;
-  let uploadFiles: FileList[] = [];
 
   // Load GeoJSON representing the selected item.
   const fetchShape = async (e) => {
@@ -58,10 +59,18 @@
     selectedShape = null;
     try {
       selectedShape = await api.fetchShape(e.detail);
-    } catch (e) {
-      error = e;
+    } catch (err) {
+      error = err;
       return;
     }
+  };
+
+  // Handle a direct upload of a GeoJSON feature.
+  const uploadShape = async (e) => {
+    mapCoord = null;
+    sample = [];
+    error = null;
+    selectedShape = e.detail;
   };
 
   // Load sample data in the current boundary.
@@ -95,7 +104,6 @@
     sample = [];
     selectedShape = null;
     searchMode = 'search';
-    uploadFiles = [];
   };
 
   // Set sample size unit to new value.
@@ -133,35 +141,6 @@
   const setReady = () => {
     ready = true;
   };
-
-  // Upload a custom geometry
-  const uploadShape = async () => {
-    if (uploadFiles.length === 0) {
-      return;
-    }
-
-    const t = await uploadFiles[0].text();
-    try {
-      const json = JSON.parse(t);
-      if (json.type !== 'Feature') {
-        throw new Error('Only GeoJSON features are supported at this time.');
-      }
-      if (!json.properties.name) {
-        json.properties.name = uploadFiles[0].name;
-      }
-      selectedShape = json;
-    } catch (e) {
-      error = e;
-    }
-  };
-
-  $: {
-    if (uploadFiles.length > 0) {
-      uploadShape();
-    } else {
-      selectedShape = null;
-    }
-  }
 </script>
 
 <style lang="postcss">
@@ -232,7 +211,11 @@
             <NavLi>addresses from</NavLi>
             <NavLi>
               <Badge id="bound" large>
-                {selectedShape.properties.name}
+                {getFuzzyFeatureProp(
+                  selectedShape.properties,
+                  'name',
+                  '$$tmpName',
+                )}
                 <CloseButton
                   size="sm"
                   class="ml-3 -mr-1.5"
@@ -281,15 +264,20 @@
                 title="Search"
               >
                 <Search on:select={fetchShape} />
+                <Helper
+                  class="text-s font-normal text-sky-600 dark:text-sky-300 pt-4 rounded"
+                  >Search for census geometries like counties, places, and
+                  tracts. Try: "Glover, Vermont."</Helper
+                >
               </TabItem>
               <TabItem
                 open={searchMode === 'upload'}
                 on:click={(searchMode = 'upload')}
                 title="Upload"
               >
-                <Fileupload bind:files={uploadFiles} />
+                <Upload on:select={uploadShape} />
                 <Helper
-                  class="text-s font-normal text-sky-600 dark:text-sky-300 rounded pt-4"
+                  class="text-s font-normal text-sky-600 dark:text-sky-300 rounded pt-4 rounded"
                 >
                   Upload a file containing a GeoJSON Feature from your computer
                   to use as the sampling area.
