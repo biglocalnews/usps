@@ -1,6 +1,7 @@
 <script lang="ts">
   import {onMount, createEventDispatcher} from 'svelte';
   import {
+    Helper,
     Fileupload,
     Modal,
     Table,
@@ -39,8 +40,8 @@
       if (json.type === 'FeatureCollection') {
         // Sort the features alphabetically.
         collectionSet = json.features.slice().sort((a, b) => {
-          const aName = getFuzzyFeatureProp(a, 'name', 'id');
-          const bName = getFuzzyFeatureProp(b, 'name', 'id');
+          const aName = getFuzzyFeatureProp(a.properties, 'name', 'id');
+          const bName = getFuzzyFeatureProp(b.properties, 'name', 'id');
           if (aName === bName) {
             return 0;
           }
@@ -66,15 +67,20 @@
 
 <div>
   <Fileupload bind:files={uploadFiles} />
-  <Modal bind:open={collectionSet}>
+  <Modal bind:open={collectionSet} title="Feature Collection">
+    <Helper
+      >Select the feature in this collection you want to sample from.</Helper
+    >
     <Table hoverable>
       <TableHead>
-        <TableHeadCell>Feature</TableHeadCell>
+        <TableHeadCell>Name</TableHeadCell>
       </TableHead>
       <TableBody>
         {#each collectionSet as feature, i}
           <TableBodyRow on:click={() => acceptShape(feature)}>
-            <TableBodyCell>
+            <TableBodyCell
+              tdClass="px-6 py-4 whitespace-nowrap font-medium cursor-pointer"
+            >
               {getFuzzyFeatureProp(feature.properties, 'name', 'id') || i}
             </TableBodyCell>
           </TableBodyRow>
