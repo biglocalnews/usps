@@ -31,7 +31,7 @@
   import SampleTable from './SampleTable.svelte';
   import Help from './Help.svelte';
   import Upload from './Upload.svelte';
-  import {getFuzzyFeatureProp} from '$lib/getFeatureName';
+  import {getFeatureName} from '$lib/getFeatureName';
   import * as api from '../lib/api.ts';
   import * as exportTools from '../lib/export.ts';
   import type {Address, Shape, SampleSizeUnit} from '../lib/api.ts';
@@ -211,11 +211,8 @@
             <NavLi>addresses from</NavLi>
             <NavLi>
               <Badge id="bound" large>
-                {getFuzzyFeatureProp(
-                  selectedShape.properties,
-                  'name',
-                  '$$tmpName',
-                )}
+                {getFeatureName(selectedShape.properties, 'name') ||
+                  'Selected area'}
                 <CloseButton
                   size="sm"
                   class="ml-3 -mr-1.5"

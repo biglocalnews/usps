@@ -20,3 +20,26 @@ export const getFuzzyFeatureProp = (
 
   return undefined;
 };
+
+/**
+ * Cache key for the derived name.
+ */
+const NAME_KEY = '$$tmpName';
+
+/**
+ * Try to get a reasonable name for the feature from the given properties.
+ */
+export const getFeatureName = (
+  properties: Record<string, string>,
+  fallback?: string,
+) => {
+  if (properties.hasOwnProperty(NAME_KEY)) {
+    return properties[NAME_KEY];
+  }
+
+  const name = getFuzzyFeatureProp(properties, 'name', 'id') || fallback || '';
+  if (name) {
+    properties[NAME_KEY] = name;
+  }
+  return name;
+};

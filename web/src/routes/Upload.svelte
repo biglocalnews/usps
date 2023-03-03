@@ -11,7 +11,7 @@
     TableHead,
     TableHeadCell,
   } from 'flowbite-svelte';
-  import {getFuzzyFeatureProp} from '$lib/getFeatureName';
+  import {getFeatureName} from '$lib/getFeatureName';
 
   const dispatch = createEventDispatcher();
   let uploadFiles: FileList[] = [];
@@ -19,10 +19,7 @@
 
   // Fire "select" event with valid shape
   const acceptShape = (json: GeoJSON.Feature<GeoJSON.MultiPolygon, {}>) => {
-    const name = getFuzzyFeatureProp(json.properties, 'name');
-    if (!name) {
-      json.properties['$$tmpName'] = uploadFiles[0].name;
-    }
+    const name = getFeatureName(json.properties);
     dispatch('select', json);
     uploadFiles = [];
     collectionSet = null;
@@ -39,9 +36,13 @@
       const json = JSON.parse(t);
       if (json.type === 'FeatureCollection') {
         // Sort the features alphabetically.
+        json.features.forEach((f, i) => {
+          getFeatureName(f.properties, `${uploadFiles[0].name}-${i}`);
+        });
+
         collectionSet = json.features.slice().sort((a, b) => {
-          const aName = getFuzzyFeatureProp(a.properties, 'name', 'id');
-          const bName = getFuzzyFeatureProp(b.properties, 'name', 'id');
+          const aName = getFeatureName(a.properties);
+          const bName = getFeatureName(b.properties);
           if (aName === bName) {
             return 0;
           }
@@ -81,7 +82,7 @@
             <TableBodyCell
               tdClass="px-6 py-4 whitespace-nowrap font-medium cursor-pointer"
             >
-              {getFuzzyFeatureProp(feature.properties, 'name', 'id') || i}
+              {getFeatureName(feature.properties)}
             </TableBodyCell>
           </TableBodyRow>
         {/each}
