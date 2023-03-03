@@ -1,5 +1,4 @@
 <script lang="ts">
-  import {browser} from '$app/environment';
   import {fly, fade} from 'svelte/transition';
   import {
     Fileupload,
@@ -36,7 +35,6 @@
   import * as exportTools from '../lib/export.ts';
   import type {Address, Shape, SampleSizeUnit} from '../lib/api.ts';
 
-  const showUpload = browser && document.location.search === '?new';
   let searchMode: 'search' | 'upload' = 'search';
   let ready = false;
   let sample: Address[] = [];
@@ -250,40 +248,36 @@
           <Heading>US Place Sampler</Heading>
         </header>
         <div>
-          {#if showUpload}
-            <Tabs
-              contentClass="p-4 bg-gray-50/75 rounded-b-lg rounded-tr-lg dark:bg-gray-800/75"
-              inactiveClasses="p-4 text-gray-500 rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300 bg-white"
+          <Tabs
+            contentClass="p-4 bg-gray-50/75 rounded-b-lg rounded-tr-lg dark:bg-gray-800/75"
+            inactiveClasses="p-4 text-gray-500 rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300 bg-white"
+          >
+            <TabItem
+              open={searchMode === 'search'}
+              on:click={(searchMode = 'search')}
+              title="Search"
             >
-              <TabItem
-                open={searchMode === 'search'}
-                on:click={(searchMode = 'search')}
-                title="Search"
+              <Search on:select={fetchShape} />
+              <Helper
+                class="text-s font-normal text-sky-600 dark:text-sky-300 pt-4 rounded"
+                >Search for census geometries like counties, places, and tracts.
+                Try: "Glover, Vermont."</Helper
               >
-                <Search on:select={fetchShape} />
-                <Helper
-                  class="text-s font-normal text-sky-600 dark:text-sky-300 pt-4 rounded"
-                  >Search for census geometries like counties, places, and
-                  tracts. Try: "Glover, Vermont."</Helper
-                >
-              </TabItem>
-              <TabItem
-                open={searchMode === 'upload'}
-                on:click={(searchMode = 'upload')}
-                title="Upload"
+            </TabItem>
+            <TabItem
+              open={searchMode === 'upload'}
+              on:click={(searchMode = 'upload')}
+              title="Upload"
+            >
+              <Upload on:select={uploadShape} />
+              <Helper
+                class="text-s font-normal text-sky-600 dark:text-sky-300 rounded pt-4 rounded"
               >
-                <Upload on:select={uploadShape} />
-                <Helper
-                  class="text-s font-normal text-sky-600 dark:text-sky-300 rounded pt-4 rounded"
-                >
-                  Upload a file containing a GeoJSON Feature from your computer
-                  to use as the sampling area.
-                </Helper>
-              </TabItem>
-            </Tabs>
-          {:else}
-            <Search on:select={fetchShape} />
-          {/if}
+                Upload a file containing a GeoJSON Feature from your computer to
+                use as the sampling area.
+              </Helper>
+            </TabItem>
+          </Tabs>
         </div>
       </div>
     {/if}
