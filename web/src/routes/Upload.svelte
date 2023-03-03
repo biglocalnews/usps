@@ -82,7 +82,12 @@
             <TableBodyCell
               tdClass="px-6 py-4 whitespace-nowrap font-medium cursor-pointer"
             >
-              {getFeatureName(feature.properties)}
+              <div
+                class="truncate max-w-xl"
+                title={getFeatureName(feature.properties)}
+              >
+                {getFeatureName(feature.properties)}
+              </div>
             </TableBodyCell>
           </TableBodyRow>
         {/each}
