@@ -1,15 +1,22 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import text
 
+from .shape import ShapeType
+
 
 @dataclass
 class SearchResult:
-    gid: int
-    kind: str
-    name: str
-    secondary: str
+    gid: int = field(metadata={"description": "ID of the geometry in our database"})
+    kind: ShapeType = field(metadata={"description": "Type of geometry"})
+    name: str = field(metadata={"description": "Name of the geometry"})
+    secondary: str = field(metadata={"description": "Secondary name of the geometry"})
+
+
+@dataclass
+class SearchResults:
+    results: list[SearchResult]
 
 
 def _compile_query(q: str) -> str:
@@ -17,9 +24,7 @@ def _compile_query(q: str) -> str:
     return "%" + ("%".join(q.split())) + "%"
 
 
-async def search_tiger(
-    conn: AsyncConnection, q: str, limit: int = 10
-) -> list[SearchResult]:
+async def search_tiger(conn: AsyncConnection, q: str, limit: int = 10) -> SearchResults:
     """Perform a search on the TIGER places db."""
     # Interpret filters on `kind` with a `{kind}:{q}` prefix.
     kind_filter = ""
@@ -55,7 +60,9 @@ async def search_tiger(
 
     results = await conn.execute(stmt, params)
 
-    return [
-        SearchResult(gid=gid, kind=kind, name=name, secondary=secondary)
-        for gid, kind, name, secondary, _ in results
-    ]
+    return SearchResults(
+        results=[
+            SearchResult(gid=gid, kind=kind, name=name, secondary=secondary)
+            for gid, kind, name, secondary, _ in results
+        ]
+    )

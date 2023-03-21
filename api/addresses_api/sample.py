@@ -1,12 +1,12 @@
-from dataclasses import dataclass
-from typing import List, Optional, Tuple, Union
+from dataclasses import dataclass, field
+from typing import Literal, Optional, Tuple, Union
 
 from geojson import Feature, MultiPolygon, Point, dumps
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import text
 
-from .shape import get_shape_table
+from .shape import ShapeType, get_shape_table
 
 
 @dataclass
@@ -16,26 +16,38 @@ class ShapePlaceholder:
     See `./shape.py` for more details.
     """
 
-    name: Optional[str]
-    kind: str
-    gid: int
+    kind: ShapeType = field(metadata={"description": "Type of geometry"})
+    gid: int = field(metadata={"description": "ID of the geometry in our database"})
+    name: Optional[str] = field(
+        default=None,
+        metadata={
+            "description": "Name of the geometry (for presentation only; not required)"
+        },
+    )
 
 
 class SampleRequest(BaseModel):
     """Describe how to draw a sample of addresses.
 
     This includes geographic constraints and statistical ones.
+
+    Either `custom_bounds` or `shape_bounds` must be passed, but not both.
     """
 
     # Bounds can either be a GeoJSON MultiPolygon, or a reference to a geometry
     # stored in the database. The latter is much faster, but the former allows
     # flexibility (such as drawing a custom geometry in the UI, or uploading
     # a geometry from another GeoJSON file).
-    custom_bounds: Optional[MultiPolygon]
-    shape_bounds: Optional[ShapePlaceholder]
-    unit: str
-    n: Union[int, float]
-    types: Optional[List[str]]
+    custom_bounds: Optional[MultiPolygon] = Field(
+        None, description="Custom GeoJSON MultiPolygon to sample within"
+    )
+    shape_bounds: Optional[ShapePlaceholder] = Field(
+        None, description="Reference to a geometry stored in the database"
+    )
+    unit: Literal["total", "pct"] = Field(..., description="Unit of `n`")
+    n: Union[int, float] = Field(
+        ..., description="Number or percentage of addresses to sample"
+    )
 
     @validator("unit")
     def unit_exists(cls, value):
@@ -73,9 +85,9 @@ class AddressSample(BaseModel):
     Sample is returned as GeoJSON features.
     """
 
-    n: int
-    addresses: list[Feature]
-    validation: list[str]
+    n: int = Field(..., description="Number of addresses in the sample")
+    addresses: list[Feature] = Field(..., description="List of addresses in the sample")
+    validation: list[str] = Field(..., description="List of validation messages")
 
 
 def _get_bounds_subquery(params: SampleRequest) -> Tuple[str, dict]:
