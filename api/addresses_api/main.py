@@ -19,8 +19,8 @@ app = FastAPI(
         "name": "MIT License",
         "url": "https://github.com/biglocalnews/usps/blob/main/LICENSE",
     },
-    docs_url=None,
-    redoc_url="/docs",
+    docs_url="/docs",
+    redoc_url=None,
     openapi_url="/openapi.json",
 )
 

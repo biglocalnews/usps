@@ -5,6 +5,7 @@ data/*
 !data/gis/.gitkeep
 !data/addr/.gitkeep
 !data/tiles/.gitkeep
+!data/test-shapes
 __pycache__/
 *.pyc
 *.o
