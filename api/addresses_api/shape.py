@@ -1,9 +1,13 @@
+from typing import Literal
+
 import geojson
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import text
 
+ShapeType = Literal["state", "county", "cousub", "place", "tract", "bg", "zcta5"]
 
-def get_shape_table(kind: str) -> str:
+
+def get_shape_table(kind: ShapeType) -> str:
     """Get the table where a shape can be found."""
     tbl = kind.lower()
     if tbl not in {"state", "county", "cousub", "place", "tract", "bg", "zcta5"}:
@@ -12,7 +16,7 @@ def get_shape_table(kind: str) -> str:
 
 
 async def fetch_shape(
-    conn: AsyncConnection, kind: str, gid: int
+    conn: AsyncConnection, kind: ShapeType, gid: int
 ) -> geojson.MultiPolygon:
     """Fetch a geometry from the database."""
     tbl = get_shape_table(kind)
