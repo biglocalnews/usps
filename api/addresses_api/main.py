@@ -71,7 +71,7 @@ async def shape(
 
 search_q = Query(
     None,
-    """\
+    description="""\
 Search string to find shapes in our database.
 
 You can prefix the search with any of the supported `ShapeType` values, such as `state:Vermont`.
