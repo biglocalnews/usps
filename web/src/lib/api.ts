@@ -109,13 +109,20 @@ export type ApiSampleResponse = Readonly<{
  * Geometry is returned as GeoJSON feature.
  */
 export const fetchShape = async (d: ShapePointer): Promise<Shape> => {
-  const res = await fetch(url('/shape', {kind: d.kind, gid: d.gid}));
-  const geom = (await res.json()) as ApiShapeResponse;
-  return {
-    type: 'Feature',
-    geometry: geom,
-    properties: d,
-  };
+  try {
+    const res = await fetch(url('/shape', {kind: d.kind, gid: d.gid}));
+    if (!res.ok) {
+      throw new Error(`${res.status}`);
+    }
+    const geom = (await res.json()) as ApiShapeResponse;
+    return {
+      type: 'Feature',
+      geometry: geom,
+      properties: d,
+    };
+  } catch (e) {
+    throw new Error(`Shape request failed: ${e}`);
+  }
 };
 
 /**
@@ -125,9 +132,16 @@ export const fetchShape = async (d: ShapePointer): Promise<Shape> => {
  * `fetchShape` function for details.
  */
 export const search = async (needle: string): Promise<ShapePointer[]> => {
-  const res = await fetch(url('/search', {q: needle}));
-  const data = (await res.json()) as ApiSearchResponse;
-  return data.results;
+  try {
+    const res = await fetch(url('/search', {q: needle}));
+    if (!res.ok) {
+      throw new Error(`${res.status}`);
+    }
+    const data = (await res.json()) as ApiSearchResponse;
+    return data.results;
+  } catch (e) {
+    throw new Error(`Search request failed: ${e}`);
+  }
 };
 
 /**
@@ -141,16 +155,24 @@ export const sample = async (
   const [shapeBounds, customBounds] = bounds.properties.hasOwnProperty('kind')
     ? [bounds.properties, undefined]
     : [undefined, bounds.geometry];
-  const res = await fetch(url('/sample'), {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      shape_bounds: shapeBounds,
-      custom_bounds: customBounds,
-      n,
-      unit,
-    }),
-    mode: 'cors',
-  });
-  return (await res.json()) as ApiSampleResponse;
+  try {
+    const res = await fetch(url('/sample'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        shape_bounds: shapeBounds,
+        custom_bounds: customBounds,
+        n,
+        unit,
+      }),
+      mode: 'cors',
+    });
+    // Catch errors from the server, don't try to decode them.
+    if (!res.ok) {
+      throw new Error(`${res.status}`);
+    }
+    return (await res.json()) as ApiSampleResponse;
+  } catch (e) {
+    throw new Error(`Sample request failed: ${e}`);
+  }
 };
