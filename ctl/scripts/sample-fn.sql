@@ -49,12 +49,12 @@ BEGIN
             local_addrs_sql = ''
                 'WITH sample AS ('
                 ' SELECT random(), a.hash, a.point, a.unit, a.number, a.street, a.city, a.district, a.region, a.postcode, a.tract_id, a.blkgrpce'
-                ' FROM oa_%I a '
+                ' FROM %I a '
                 ' WHERE a.tract_id = $1'
                 ')'
                 ' INSERT INTO local_addrs(r, hash, point, unit, number, street, city, district, region, postcode, tract_id, blkgrpce)'
                 ' SELECT s.* FROM sample s WHERE ST_Contains($2, s.point)';
-            EXECUTE format(local_addrs_sql, abbr) USING tcand.tract_id, gpart.p;
+            EXECUTE format(local_addrs_sql, format('oa_%s', abbr)) USING tcand.tract_id, gpart.p;
         END LOOP;
     END LOOP;
 
