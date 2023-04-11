@@ -34,11 +34,29 @@
       > using:
     </div>
     <div class="pl-4 my-2">
-      <div><code>county: queens</code> for Counties</div>
-      <div><code>cousub: houston texas</code> for county subdivisions</div>
-      <div><code>place: boston</code> for cities and towns</div>
-      <div><code>tract: 1241234</code> for Census tracts</div>
-      <div><code>bg: 12414514</code> for Census Block groups</div>
+      <div>
+        <code class="bg-stone-200 text-zinc-700 p-1 rounded"
+          >county: queens</code
+        > for Counties
+      </div>
+      <div>
+        <code class="bg-stone-200 text-zinc-700 p-1 rounded"
+          >cousub: houston texas</code
+        > for county subdivisions
+      </div>
+      <div>
+        <code class="bg-stone-200 text-zinc-700 p-1 rounded">place: boston</code
+        > for cities and towns
+      </div>
+      <div>
+        <code class="bg-stone-200 text-zinc-700 p-1 rounded"
+          >tract: 1241234</code
+        > for Census tracts
+      </div>
+      <div>
+        <code class="bg-stone-200 text-zinc-700 p-1 rounded">bg: 12414514</code>
+        for Census Block groups
+      </div>
     </div>
   </P>
   <P class="mb-3">
@@ -48,8 +66,10 @@
     >. Use the “Upload” option to select a local GeoJSON, and then choose which
     features you want to use.
   </P>
-  <Heading tag="h4">Need help calculating a sample size?</Heading>
-  <P class="mb-3">
+  <Heading customSize="text-xl font-semibold" tag="h4"
+    >Need help calculating a sample size?</Heading
+  >
+  <P class="my-3">
     Try using an online <A
       href="https://www.calculator.net/sample-size-calculator.html"
       rel="noopener noreferrer"
@@ -75,8 +95,10 @@
       target="_blank">Big Local News</A
     >.
   </P>
-  <Heading tag="h4">See something wrong?</Heading>
-  <P class="mb-3">
+  <Heading customSize="text-xl font-semibold" tag="h4"
+    >See something wrong?</Heading
+  >
+  <P class="my-3">
     Let us know by posting an issue on <A
       href="https://github.com/biglocalnews/usps"
       rel="noopener noreferrer">GitHub</A
