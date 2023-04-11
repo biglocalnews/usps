@@ -103,7 +103,10 @@ def _get_bounds_subquery(params: SampleRequest) -> Tuple[str, dict]:
         }
     else:
         return (
-            "SELECT St_Transform(St_GeomFromGeoJson(x), 4269) g FROM (values(:bounds)) s(x)",
+            """
+        SELECT St_Transform(St_MakeValid(St_GeomFromGeoJson(x)), 4269) g
+        FROM (values(:bounds)) s(x)
+        """,
             {"bounds": dumps(params.custom_bounds)},
         )
 
