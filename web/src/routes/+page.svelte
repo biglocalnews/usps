@@ -309,7 +309,13 @@
       <Help />
     </Modal>
     <Modal title="Error" bind:open={error} autoClose>
-      <p>An error occurred! {error.message}</p>
+      <p>Your query failed due to an error.</p>
+      <p>
+        We have automatically logged the error and notified the team so we can
+        investigate.
+      </p>
+      <p>Please try different sampling settings, or try again later.</p>
+      <pre class="whitespace-pre-wrap">{error.message}</pre>
     </Modal>
   </main>
 </div>
