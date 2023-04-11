@@ -68,6 +68,9 @@ services:
         mode: 0400
       - source: db_name
         target: /run/secrets/db_name
+      - source: sentry_dsn
+        target: /run/secrets/sentry_dsn
+        mode: 0400
     depends_on:
       - db
 
@@ -172,6 +175,8 @@ secrets:
     file: ./secrets/db_name.dev
   node_env:
     file: ./secrets/node_env.dev
+  sentry_dsn:
+    file: ./secrets/sentry_dsn.dev
 
 networks:
   private:
