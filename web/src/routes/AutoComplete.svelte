@@ -16,6 +16,21 @@
    */
   export let visible = false;
 
+  /**
+   * Height of the screen.
+   */
+  let screenHeight = 0;
+  let optsEl: HTMLDivElement | undefined;
+  let optsY = 0;
+  const optsMargin = 10; // px
+
+  $: {
+    // Update the position whenever screenHeight / opts / DOM element change.
+    if (screenHeight && optsEl && options.length > 0) {
+      optsY = optsEl.getBoundingClientRect().top || 0;
+    }
+  }
+
   const dispatch = createEventDispatcher();
 
   // Handle selecting option with the mouse.
@@ -61,15 +76,24 @@
         return kind;
     }
   };
+
+  // Scroll to selected option.
+  $: optsEl?.children[0]?.children[selected]?.scrollIntoView({
+    block: 'nearest',
+  });
 </script>
+
+<svelte:window bind:innerHeight={screenHeight} />
 
 <div class="relative">
   <slot />
   <div
-    class="absolute shadow bg-white w-full rounded overflow-hidden"
-    class:hidden={!visible || !options.length}
+    bind:this={optsEl}
+    class="absolute shadow bg-white w-full rounded overflow-x-hidden overflow-y-scroll"
+    class:invisible={!visible || !options.length}
+    style={`max-height: ${Math.max(screenHeight - optsY - optsMargin, 50)}px;`}
   >
-    <ul class="overflow-y-auto">
+    <ul>
       {#each options as opt, i}
         <li
           class="py-3 px-2 cursor-pointer hover:bg-sky-400 hover:text-white"
