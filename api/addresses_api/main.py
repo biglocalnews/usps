@@ -1,6 +1,7 @@
 from typing import Literal
 
 import geojson
+import sentry_sdk
 from fastapi import Depends, FastAPI, Query
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from .connection import get_db
 from .sample import AddressSample, SampleRequest, draw_address_sample
 from .search import SearchResults, search_tiger
+from .settings import settings
 from .shape import ShapeType, fetch_shape
+
+if settings.sentry_dsn:
+    sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+
 
 app = FastAPI(
     title="USPS Address Data API",

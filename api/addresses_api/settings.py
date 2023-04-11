@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     db_name: str = "addresses"
 
     use_secure_cookies: bool = True
+    sentry_dsn: str = ""
 
     class Config:
         secrets_dir = os.getenv("SECRETS_DIR", "/run/secrets")
